@@ -1,0 +1,41 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_SHARED_MUTEX
+#define DPRINT_CLANG_FORMAT_WASM_SHARED_MUTEX
+
+#include <mutex>
+
+namespace std {
+
+class shared_mutex {
+public:
+  void lock() {}
+  bool try_lock() { return true; }
+  void unlock() {}
+  void lock_shared() {}
+  bool try_lock_shared() { return true; }
+  void unlock_shared() {}
+};
+
+template <class Mutex>
+class shared_lock {
+public:
+  explicit shared_lock(Mutex& m) : mutex_(&m), owns_(true) {
+    mutex_->lock_shared();
+  }
+
+  ~shared_lock() {
+    if (owns_) {
+      mutex_->unlock_shared();
+    }
+  }
+
+  shared_lock(const shared_lock&) = delete;
+  shared_lock& operator=(const shared_lock&) = delete;
+
+private:
+  Mutex* mutex_;
+  bool owns_;
+};
+
+} // namespace std
+
+#endif

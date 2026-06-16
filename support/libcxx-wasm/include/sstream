@@ -1,0 +1,48 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_SSTREAM
+#define DPRINT_CLANG_FORMAT_WASM_SSTREAM
+
+#include <__config>
+#include <locale>
+#include <string>
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+template <class CharT, class Traits, class Allocator>
+class basic_ostringstream {
+public:
+  basic_ostringstream() = default;
+
+  void imbue(const locale&) {}
+
+  template <class T>
+  basic_ostringstream& operator<<(const T&) {
+    return *this;
+  }
+
+  basic_string<CharT, Traits, Allocator> str() const {
+    return basic_string<CharT, Traits, Allocator>();
+  }
+};
+
+template <class CharT, class Traits, class Allocator>
+class basic_stringstream {
+public:
+  basic_stringstream() = default;
+
+  void imbue(const locale&) {}
+
+  template <class T>
+  basic_stringstream& operator<<(const T&) {
+    return *this;
+  }
+
+  basic_string<CharT, Traits, Allocator> str() const {
+    return basic_string<CharT, Traits, Allocator>();
+  }
+};
+
+using stringstream = basic_stringstream<char, char_traits<char>, allocator<char>>;
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif

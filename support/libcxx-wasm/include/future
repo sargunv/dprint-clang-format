@@ -1,0 +1,43 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_FUTURE
+#define DPRINT_CLANG_FORMAT_WASM_FUTURE
+
+#include <utility>
+
+namespace std {
+
+enum class launch {
+  async = 1,
+  deferred = 2,
+};
+
+template <class T>
+class shared_future {
+public:
+  shared_future() = default;
+  T get() const { return T(); }
+  void wait() const {}
+};
+
+template <>
+class shared_future<void> {
+public:
+  shared_future() = default;
+  void get() const {}
+  void wait() const {}
+};
+
+template <class T>
+class future {
+public:
+  shared_future<T> share() { return shared_future<T>(); }
+};
+
+template <class Func>
+auto async(launch, Func&& func) -> future<decltype(func())> {
+  func();
+  return future<decltype(func())>();
+}
+
+} // namespace std
+
+#endif

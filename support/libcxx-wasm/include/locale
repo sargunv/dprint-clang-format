@@ -1,0 +1,14 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_LOCALE
+#define DPRINT_CLANG_FORMAT_WASM_LOCALE
+
+namespace std {
+
+class locale {
+public:
+  locale() = default;
+  explicit locale(const char*) {}
+};
+
+} // namespace std
+
+#endif

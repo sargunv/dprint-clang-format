@@ -1,0 +1,24 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_CONDITION_VARIABLE
+#define DPRINT_CLANG_FORMAT_WASM_CONDITION_VARIABLE
+
+namespace std {
+
+class condition_variable {
+public:
+  void notify_one() {}
+  void notify_all() {}
+
+  template <class Lock>
+  void wait(Lock&) {}
+
+  template <class Lock, class Predicate>
+  void wait(Lock&, Predicate pred) {
+    while (!pred()) {
+      break;
+    }
+  }
+};
+
+} // namespace std
+
+#endif

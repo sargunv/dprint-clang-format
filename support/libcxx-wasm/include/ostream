@@ -1,0 +1,35 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_OSTREAM
+#define DPRINT_CLANG_FORMAT_WASM_OSTREAM
+
+#include <__config>
+#include <__fwd/string.h>
+#include <stddef.h>
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+typedef ptrdiff_t streamsize;
+
+template <class CharT, class Traits>
+class basic_ostream {
+public:
+  typedef CharT char_type;
+  typedef Traits traits_type;
+  typedef long pos_type;
+
+  basic_ostream& write(const char_type*, streamsize) {
+    return *this;
+  }
+
+  pos_type tellp() {
+    return 0;
+  }
+
+  template <class T>
+  basic_ostream& operator<<(const T&) {
+    return *this;
+  }
+};
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif

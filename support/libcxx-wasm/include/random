@@ -1,0 +1,28 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_RANDOM
+#define DPRINT_CLANG_FORMAT_WASM_RANDOM
+
+#include_next <random>
+
+#if !_LIBCPP_HAS_RANDOM_DEVICE
+namespace std {
+
+class random_device {
+public:
+  using result_type = unsigned int;
+
+  random_device() = default;
+  explicit random_device(const string&) {}
+
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return 0xffffffffu; }
+
+  result_type operator()() { return 0x4d595df4u; }
+
+  random_device(const random_device&) = delete;
+  random_device& operator=(const random_device&) = delete;
+};
+
+} // namespace std
+#endif
+
+#endif

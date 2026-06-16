@@ -1,0 +1,27 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_IOMANIP
+#define DPRINT_CLANG_FORMAT_WASM_IOMANIP
+
+#include <ctime>
+
+namespace std {
+
+struct __wasm_setprecision {
+  int value;
+};
+
+inline __wasm_setprecision setprecision(int value) {
+  return {value};
+}
+
+struct __wasm_put_time {
+  const ::tm* value;
+  const char* format;
+};
+
+inline __wasm_put_time put_time(const ::tm* value, const char* format) {
+  return {value, format};
+}
+
+} // namespace std
+
+#endif

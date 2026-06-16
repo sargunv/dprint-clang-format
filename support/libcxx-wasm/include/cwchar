@@ -1,0 +1,60 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_CWCHAR
+#define DPRINT_CLANG_FORMAT_WASM_CWCHAR
+
+#include <wchar.h>
+
+namespace std {
+
+using ::mbstate_t;
+using ::wint_t;
+using ::wmemcmp;
+using ::wmemcpy;
+using ::wmemmove;
+using ::wmemset;
+using ::wcslen;
+using ::swprintf;
+using ::wcschr;
+using ::wcspbrk;
+using ::wcsrchr;
+using ::wcsstr;
+using ::wmemchr;
+using ::wcstol;
+using ::wcstoul;
+using ::wcstoll;
+using ::wcstoull;
+using ::wcstof;
+using ::wcstod;
+using ::wcstold;
+
+template <class CharT>
+constexpr int __constexpr_wmemcmp(const CharT* left, const CharT* right, unsigned long count) {
+  for (unsigned long i = 0; i < count; ++i) {
+    if (left[i] != right[i]) {
+      return left[i] < right[i] ? -1 : 1;
+    }
+  }
+  return 0;
+}
+
+template <class CharT>
+constexpr unsigned long __constexpr_wcslen(const CharT* str) {
+  unsigned long len = 0;
+  while (str[len] != 0) {
+    ++len;
+  }
+  return len;
+}
+
+template <class CharT, class ValueT>
+constexpr CharT* __constexpr_wmemchr(CharT* str, ValueT value, unsigned long count) {
+  for (unsigned long i = 0; i < count; ++i) {
+    if (str[i] == value) {
+      return str + i;
+    }
+  }
+  return nullptr;
+}
+
+} // namespace std
+
+#endif

@@ -1,0 +1,6 @@
+#ifndef _LIBCPP___ASSERTION_HANDLER
+#define _LIBCPP___ASSERTION_HANDLER
+
+#define _LIBCPP_ASSERTION_HANDLER(message) __builtin_trap()
+
+#endif

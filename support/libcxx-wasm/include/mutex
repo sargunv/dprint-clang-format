@@ -1,0 +1,98 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_MUTEX
+#define DPRINT_CLANG_FORMAT_WASM_MUTEX
+
+namespace std {
+
+class mutex {
+public:
+  void lock() {}
+  bool try_lock() { return true; }
+  void unlock() {}
+};
+
+class recursive_mutex {
+public:
+  void lock() {}
+  bool try_lock() { return true; }
+  void unlock() {}
+};
+
+struct once_flag {
+  bool called = false;
+};
+
+template <class Function, class... Args>
+void call_once(once_flag& flag, Function&& function, Args&&... args) {
+  if (!flag.called) {
+    flag.called = true;
+    static_cast<Function&&>(function)(static_cast<Args&&>(args)...);
+  }
+}
+
+template <class Mutex>
+class lock_guard {
+public:
+  explicit lock_guard(Mutex& m) : mutex_(m) { mutex_.lock(); }
+  ~lock_guard() { mutex_.unlock(); }
+
+  lock_guard(const lock_guard&) = delete;
+  lock_guard& operator=(const lock_guard&) = delete;
+
+private:
+  Mutex& mutex_;
+};
+
+template <class Mutex>
+class unique_lock {
+public:
+  unique_lock() : mutex_(nullptr), owns_(false) {}
+  explicit unique_lock(Mutex& m) : mutex_(&m), owns_(true) { mutex_->lock(); }
+  unique_lock(unique_lock&& other) : mutex_(other.mutex_), owns_(other.owns_) {
+    other.mutex_ = nullptr;
+    other.owns_ = false;
+  }
+  ~unique_lock() {
+    if (owns_ && mutex_ != nullptr) {
+      mutex_->unlock();
+    }
+  }
+
+  unique_lock(const unique_lock&) = delete;
+  unique_lock& operator=(const unique_lock&) = delete;
+  unique_lock& operator=(unique_lock&& other) {
+    if (this != &other) {
+      if (owns_ && mutex_ != nullptr) {
+        mutex_->unlock();
+      }
+      mutex_ = other.mutex_;
+      owns_ = other.owns_;
+      other.mutex_ = nullptr;
+      other.owns_ = false;
+    }
+    return *this;
+  }
+
+  void lock() {
+    if (mutex_ != nullptr) {
+      mutex_->lock();
+      owns_ = true;
+    }
+  }
+
+  void unlock() {
+    if (mutex_ != nullptr) {
+      mutex_->unlock();
+    }
+    owns_ = false;
+  }
+
+  bool owns_lock() const { return owns_; }
+
+private:
+  Mutex* mutex_;
+  bool owns_;
+};
+
+} // namespace std
+
+#endif

@@ -1,0 +1,32 @@
+[workspace]
+name = "dprint-clang-format-wasm-spike"
+version = "0.1.0"
+description = "Spike for validating a sandboxed dprint clang-format WebAssembly plugin."
+authors = ["Sargun V <sargunv@users.noreply.github.com>"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+clangxx = ">=22.1.7,<23"
+cmake = ">=4.0,<5"
+curl = ">=8,<9"
+git = ">=2.49,<3"
+lld = ">=22.1.7,<23"
+ninja = ">=1.12,<2"
+python = ">=3.13,<3.14"
+wabt = ">=1.0.37,<2"
+
+[tasks]
+check-tools = "scripts/check_tools.sh"
+build-probe = "scripts/build_probe.sh"
+build-libformat-probe = "scripts/build_libformat_probe.sh"
+build-dprint-plugin = "scripts/build_dprint_plugin.sh"
+build-stl-probe = "scripts/build_stl_probe.sh"
+configure-llvm-wasm = "scripts/configure_llvm_wasm.sh"
+fetch-llvm = "scripts/fetch_llvm.sh"
+report-libformat-probe-imports = "scripts/report_wasm_imports.sh build/libformat-probe.wasm reports/libformat-probe-imports.md"
+report-dprint-plugin-imports = "scripts/report_wasm_imports.sh build/dprint-clang-format-plugin.wasm reports/dprint-plugin-imports.md"
+report-probe-imports = "scripts/report_wasm_imports.sh build/probe.wasm reports/probe-imports.md"
+report-stl-probe-imports = "scripts/report_wasm_imports.sh build/stl-probe.wasm reports/stl-probe-imports.md"
+smoke-dprint-plugin = "scripts/smoke_dprint_plugin.sh"
+smoke-freestanding = "scripts/smoke_freestanding.sh"

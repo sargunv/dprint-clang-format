@@ -1,0 +1,11 @@
+[tools]
+dprint = "0.54.0"
+pixi = "0.69.0"
+
+[tasks.pixi-install]
+description = "Install the pixi-managed build and inspection tools."
+run = "pixi install"
+
+[tasks.check-tools]
+description = "Show the tool versions used by the LibFormat Wasm spike."
+run = "pixi run check-tools"

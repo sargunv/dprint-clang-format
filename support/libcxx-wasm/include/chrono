@@ -1,0 +1,24 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_CHRONO
+#define DPRINT_CLANG_FORMAT_WASM_CHRONO
+
+#include_next <chrono>
+
+#if !_LIBCPP_HAS_MONOTONIC_CLOCK
+namespace std::chrono {
+
+class steady_clock {
+public:
+  using rep = nanoseconds::rep;
+  using period = nanoseconds::period;
+  using duration = nanoseconds;
+  using time_point = chrono::time_point<steady_clock>;
+
+  static constexpr bool is_steady = true;
+
+  static time_point now() noexcept { return time_point(duration(0)); }
+};
+
+} // namespace std::chrono
+#endif
+
+#endif

@@ -1,0 +1,18 @@
+#ifndef DPRINT_CLANG_FORMAT_WASM_THREAD
+#define DPRINT_CLANG_FORMAT_WASM_THREAD
+
+#include <chrono>
+
+namespace std::this_thread {
+
+inline void yield() noexcept {}
+
+template <class Rep, class Period>
+void sleep_for(const std::chrono::duration<Rep, Period>&) {}
+
+template <class Clock, class Duration>
+void sleep_until(const std::chrono::time_point<Clock, Duration>&) {}
+
+} // namespace std::this_thread
+
+#endif
