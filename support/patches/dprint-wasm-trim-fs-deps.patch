@@ -1,6 +1,6 @@
 --- a/llvm/lib/Support/Path.cpp
 +++ b/llvm/lib/Support/Path.cpp
-@@ -998,6 +998,11 @@
+@@ -998,6 +998,7 @@
  }
  
  static std::error_code copy_file_internal(int ReadFD, int WriteFD) {
@@ -8,10 +8,16 @@
 +  (void)ReadFD;
 +  (void)WriteFD;
 +  return std::make_error_code(std::errc::operation_not_supported);
-+#endif
++#else
    const size_t BufSize = 4096;
    char *Buf = new char[BufSize];
    int BytesRead = 0, BytesWritten = 0;
+@@ -1023,6 +1024,7 @@
+   if (BytesRead < 0 || BytesWritten < 0)
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
 --- a/llvm/lib/Support/ErrorHandling.cpp
 +++ b/llvm/lib/Support/ErrorHandling.cpp
 @@ -64,6 +64,12 @@

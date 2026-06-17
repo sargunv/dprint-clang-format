@@ -370,12 +370,13 @@ wasm, use zero-fill instead of `/dev/urandom` in `getRandomBytes`, and skip
 link-only shims. `open`/`close`/`read` still required via `Path.cpp`/`raw_ostream` —
 next trim target.
 
-### Path.inc openFile/directory_iterator wasm guards
+### Path.cpp/Path.inc: use `#else` wasm guards (not early `#endif`)
 
-Guarded `openFile()` and `directory_iterator_construct()` on wasm so link no longer
-pulls `open`/`opendir`. Removed **3** unused stubs (`open`, `opendir`, `readlink`);
-**48 → 45** link-only shims. `read`/`close` still required via `Path.cpp` cold paths
-(copy/mapped-file helpers). Captured guards in `dprint-wasm-trim-fs-deps.patch` plus
-Jobserver ctor/dtor/tryAcquire; also fixed `Program.inc` patch header and backfilled
-`GetRandomNumberSeed`/`raw_fd_stream::read` in `dprint-wasm-no-real-fs.patch`.
-Smoke passes.
+Prior wasm guards returned early but left POSIX calls in the compiled object
+(`#return` then `#endif` still emits `read`/`close`/etc. at link). Reworked
+Path.cpp and Path.inc cold paths to wrap bodies in `#else`/`#endif`, including
+`copy_file*`, `md5_contents`, temp-file closes, directory iteration,
+`current_path`/`set_current_path`/`access`/`real_path`, `readNativeFile*`, and
+`getMainExecutable`. Removed **8** now-unused stubs (`read`, `close`, `access`,
+`chdir`, `getcwd`, `lseek`, `readdir`, `closedir`); **45 → 37** link-only
+shims. Smoke passes.

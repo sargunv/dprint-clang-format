@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
 #include <pwd.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -35,16 +34,6 @@ int rename(const char*, const char*) {
   return -1;
 }
 
-int close(int) {
-  errno = EBADF;
-  return -1;
-}
-
-int access(const char*, int) {
-  errno = ENOENT;
-  return -1;
-}
-
 unsigned int alarm(unsigned int) {
   return 0;
 }
@@ -52,19 +41,6 @@ unsigned int alarm(unsigned int) {
 int fcntl(int, int, ...) {
   errno = EBADF;
   return -1;
-}
-
-int chdir(const char*) {
-  errno = ENOENT;
-  return -1;
-}
-
-char* getcwd(char* buffer, size_t size) {
-  if (size > 0 && buffer != nullptr) {
-    buffer[0] = '\0';
-  }
-  errno = ENOENT;
-  return nullptr;
 }
 
 int gethostname(char* name, size_t len) {
@@ -89,11 +65,6 @@ pid_t getpid() {
 
 int link(const char*, const char*) {
   errno = ENOENT;
-  return -1;
-}
-
-off_t lseek(int, off_t, int) {
-  errno = EBADF;
   return -1;
 }
 
@@ -189,16 +160,6 @@ int getrusage(int, struct rusage* usage) {
   return 0;
 }
 
-struct dirent* readdir(DIR*) {
-  errno = EBADF;
-  return nullptr;
-}
-
-int closedir(DIR*) {
-  errno = EBADF;
-  return -1;
-}
-
 int getpwnam_r(const char*, struct passwd*, char*, unsigned long, struct passwd** result) {
   if (result != nullptr) {
     *result = nullptr;
@@ -208,11 +169,6 @@ int getpwnam_r(const char*, struct passwd*, char*, unsigned long, struct passwd*
 
 pid_t getsid(pid_t) {
   errno = ESRCH;
-  return -1;
-}
-
-ssize_t read(int, void*, size_t) {
-  errno = EBADF;
   return -1;
 }
 
