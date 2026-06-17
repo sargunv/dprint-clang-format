@@ -302,3 +302,14 @@ Trial link omitting one archive/object at a time:
 **Conclusion:** the nine-archive / eight-libcxx-object closure is minimal for link. Further
 repo shrink is upstream-side (patch cold paths, skip building unused LLVM libs like
 FrontendOpenMP in the wasm cross-build).
+
+### Patch: skip building libLLVMFrontendOpenMP on wasm
+
+Added `support/patches/dprint-wasm-skip-frontend-openmp.patch`: on
+`CMAKE_CXX_COMPILER_TARGET` matching `wasm32`, drop `FrontendOpenMP` from
+`clang/lib/Basic/CMakeLists.txt` `LLVM_LINK_COMPONENTS`. Refactored
+`apply_llvm_patches.sh` to apply multiple patches idempotently.
+
+After reconfigure + rebuild: `libLLVMFrontendOpenMP.a` is **no longer produced** in
+`build/llvm-wasm/lib/` (deleted artifact; `ninja clangFormat` does not recreate it).
+Smoke still passes.

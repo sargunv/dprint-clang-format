@@ -6,7 +6,6 @@ cd "$repo_root"
 
 llvm_version="${LLVM_VERSION:-22.1.7}"
 source_dir="third_party/llvm-project-${llvm_version}.src"
-patch_file="$repo_root/support/patches/dprint-wasm-no-real-fs.patch"
 
 if [[ ! -f "$source_dir/clang/lib/Format/Format.cpp" ]]; then
   echo "LLVM source not found at $source_dir" >&2
@@ -14,21 +13,33 @@ if [[ ! -f "$source_dir/clang/lib/Format/Format.cpp" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$patch_file" ]]; then
-  echo "patch not found: $patch_file" >&2
-  exit 1
-fi
+apply_patch() {
+  local patch_file="$1"
+  local marker_file="$2"
+  local marker_pattern="$3"
 
-if rg -q 'filesystem style discovery is unavailable on wasm' "$source_dir/clang/lib/Format/Format.cpp" &&
-   rg -q 'makeIntrusiveRefCnt<llvm::vfs::InMemoryFileSystem>' "$source_dir/clang/lib/Basic/FileManager.cpp" &&
-   rg -q 'operation_not_supported' "$source_dir/llvm/lib/Support/raw_ostream.cpp" &&
-   rg -q -F '(void)FD;' "$source_dir/llvm/lib/Support/Unix/Process.inc" &&
-   rg -q -F '(void)result;' "$source_dir/llvm/lib/Support/Unix/Path.inc"; then
-  echo "patches already applied"
-  exit 0
-fi
+  if [[ ! -f "$patch_file" ]]; then
+    echo "patch not found: $patch_file" >&2
+    exit 1
+  fi
 
-cd "$source_dir"
-patch -p1 -N --forward < "$patch_file"
+  if rg -q "$marker_pattern" "$marker_file"; then
+    echo "already applied: $(basename "$patch_file")"
+    return 0
+  fi
 
-echo "applied $patch_file"
+  cd "$source_dir"
+  patch -p1 -N --forward < "$patch_file"
+  cd "$repo_root"
+  echo "applied $(basename "$patch_file")"
+}
+
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-no-real-fs.patch" \
+  "$source_dir/clang/lib/Format/Format.cpp" \
+  'filesystem style discovery is unavailable on wasm'
+
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-skip-frontend-openmp.patch" \
+  "$source_dir/clang/lib/Basic/CMakeLists.txt" \
+  'LibFormat wasm cross-build does not need the OpenMP frontend library'

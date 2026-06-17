@@ -1,0 +1,15 @@
+--- a/clang/lib/Basic/CMakeLists.txt
++++ b/clang/lib/Basic/CMakeLists.txt
+@@ -1,8 +1,11 @@
+ set(LLVM_LINK_COMPONENTS
+   Support
+   TargetParser
+-  FrontendOpenMP
+   )
++# LibFormat wasm cross-build does not need the OpenMP frontend library at link time.
++if(NOT CMAKE_CXX_COMPILER_TARGET MATCHES "wasm32")
++  list(APPEND LLVM_LINK_COMPONENTS FrontendOpenMP)
++endif()
+ 
+ find_first_existing_vc_file("${LLVM_MAIN_SRC_DIR}" llvm_vc)
+ find_first_existing_vc_file("${CLANG_SOURCE_DIR}" clang_vc)
