@@ -313,3 +313,15 @@ Added `support/patches/dprint-wasm-skip-frontend-openmp.patch`: on
 After reconfigure + rebuild: `libLLVMFrontendOpenMP.a` is **no longer produced** in
 `build/llvm-wasm/lib/` (deleted artifact; `ninja clangFormat` does not recreate it).
 Smoke still passes.
+
+### Patch: fixed __DATE__/__TIME__/__TIMESTAMP__ on wasm
+
+Added `support/patches/dprint-wasm-fixed-date-time.patch` on
+`clang/lib/Lex/PPMacroExpansion.cpp`: `ComputeDATE_TIME` and `__TIMESTAMP__` expand to
+fixed epoch strings without calling `time`/`gmtime`/`localtime`. Removes those refs from
+`libclangLex.a` (verified via `llvm-nm -u`).
+
+Shipped POSIX stubs in final wasm: **7 → 4** (`fstat`, `stat`, `unlink`, `write`). Removed
+now-unreferenced `time`/`gmtime`/`localtime` wrappers from `wasm_posix_stubs.cpp`; kept
+`gmtime_r`/`localtime_r`/`strftime` (still required at link by libc++ chrono path).
+Smoke passes.

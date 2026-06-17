@@ -43,3 +43,8 @@ apply_patch \
   "$repo_root/support/patches/dprint-wasm-skip-frontend-openmp.patch" \
   "$source_dir/clang/lib/Basic/CMakeLists.txt" \
   'LibFormat wasm cross-build does not need the OpenMP frontend library'
+
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-fixed-date-time.patch" \
+  "$source_dir/clang/lib/Lex/PPMacroExpansion.cpp" \
+  'Jan  1 1970'

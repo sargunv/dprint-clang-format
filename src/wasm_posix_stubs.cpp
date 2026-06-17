@@ -360,13 +360,6 @@ ssize_t write(int, const void*, size_t) {
   return -1;
 }
 
-time_t time(time_t* out) {
-  if (out != nullptr) {
-    *out = 0;
-  }
-  return 0;
-}
-
 struct tm* gmtime_r(const time_t*, struct tm* result) {
   if (result != nullptr) {
     memset(result, 0, sizeof(*result));
@@ -376,15 +369,6 @@ struct tm* gmtime_r(const time_t*, struct tm* result) {
 
 struct tm* localtime_r(const time_t*, struct tm* result) {
   return gmtime_r(nullptr, result);
-}
-
-struct tm* gmtime(const time_t* timep) {
-  static struct tm result;
-  return gmtime_r(timep, &result);
-}
-
-struct tm* localtime(const time_t* timep) {
-  return gmtime(timep);
 }
 
 unsigned long strftime(char* buffer, unsigned long size, const char*, const struct tm*) {
