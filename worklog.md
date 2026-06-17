@@ -274,3 +274,13 @@ Follow-up audit: **0 unused posix stubs** remain. Removed one more unreferenced
 `operator delete[](void*, size_t, align_val_t)`; runtime core link-time floor reached
 (57/57 defined symbols referenced). Further support-code shrink needs LLVM patches
 (e.g. VFS time/chrono) or building less of clang, not more stub pruning.
+
+### Drop libLLVMFrontendOpenMP from link closure
+
+`clang/lib/Basic/CMakeLists.txt` lists `FrontendOpenMP` in `LLVM_LINK_COMPONENTS`, but
+`llvm-nm` + trial link show **no undefined symbols** from that archive in our formatter
+path. Removed `libLLVMFrontendOpenMP.a` from `link_libformat_wasm.sh` (10 → **9**
+archives). `pixi run smoke-dprint-plugin` still passes; wasm still ~3.0 MiB.
+
+Note: LLVM still *builds* the archive when compiling clangBasic; skipping that would need
+a wasm-specific CMake patch. Link closure trim is zero-risk for now.

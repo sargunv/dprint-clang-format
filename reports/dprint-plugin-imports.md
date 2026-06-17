@@ -1,7 +1,7 @@
 # Wasm Import Report
 
 - Module: `build/dprint-clang-format-plugin.wasm`
-- Generated: `2026-06-17T06:10:11Z`
+- Generated: `2026-06-17T06:11:14Z`
 - Import count: `0`
 
 ## Import Section

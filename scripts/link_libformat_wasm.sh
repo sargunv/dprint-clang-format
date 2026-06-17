@@ -74,7 +74,9 @@ clang++ "${common_flags[@]}" -D_LIBCPP_BUILDING_LIBRARY -c "$llvm_src/libcxx/src
 clang++ "${common_flags[@]}" -std=c++20 -D_LIBCPP_BUILDING_LIBRARY -c "$llvm_src/libcxx/src/system_error.cpp" -o build/libcxx_system_error.o
 
 # Minimal LibFormat closure from upstream CMake LINK_LIBS (Format -> Basic/Lex/
-# ToolingCore/Inclusions -> Rewrite -> Support/TargetParser/FrontendOpenMP/Demangle).
+# ToolingCore/Inclusions -> Rewrite -> Support/TargetParser/Demangle).
+# libLLVMFrontendOpenMP is listed in clangBasic CMake LINK_COMPONENTS but is not
+# required at link time for our formatter path (--gc-sections; verified 2026-06-17).
 # Linking all libLLVM*.a under build/llvm-wasm was unnecessary: --gc-sections produced
 # the same module, but pulled in 40+ archives and slowed linking.
 static_libs=(
@@ -84,7 +86,6 @@ static_libs=(
   "$llvm_build/lib/libclangRewrite.a"
   "$llvm_build/lib/libclangLex.a"
   "$llvm_build/lib/libclangBasic.a"
-  "$llvm_build/lib/libLLVMFrontendOpenMP.a"
   "$llvm_build/lib/libLLVMTargetParser.a"
   "$llvm_build/lib/libLLVMSupport.a"
   "$llvm_build/lib/libLLVMDemangle.a"
