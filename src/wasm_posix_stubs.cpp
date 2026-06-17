@@ -4,17 +4,14 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 #include <dirent.h>
 #include <pwd.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
-#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -110,11 +107,6 @@ int link(const char*, const char*) {
   return -1;
 }
 
-int pipe(int[2]) {
-  errno = EMFILE;
-  return -1;
-}
-
 off_t lseek(int, off_t, int) {
   errno = EBADF;
   return -1;
@@ -184,21 +176,7 @@ int poll(struct pollfd*, nfds_t, int) {
   return -1;
 }
 
-void* mmap(void*, size_t, int, int, int, off_t) {
-  errno = ENOMEM;
-  return MAP_FAILED;
-}
-
-int munmap(void*, size_t) {
-  return 0;
-}
-
 int mprotect(void*, size_t, int) {
-  errno = ENOMEM;
-  return -1;
-}
-
-int msync(void*, size_t, int) {
   errno = ENOMEM;
   return -1;
 }
@@ -236,31 +214,6 @@ int getrusage(int, struct rusage* usage) {
   return 0;
 }
 
-int socket(int, int, int) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int connect(int, const struct sockaddr*, socklen_t) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int bind(int, const struct sockaddr*, socklen_t) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int listen(int, int) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int accept(int, struct sockaddr*, socklen_t*) {
-  errno = ENOSYS;
-  return -1;
-}
-
 DIR* opendir(const char*) {
   errno = ENOENT;
   return nullptr;
@@ -279,29 +232,6 @@ int closedir(DIR*) {
 int getpwnam_r(const char*, struct passwd*, char*, unsigned long, struct passwd** result) {
   if (result != nullptr) {
     *result = nullptr;
-  }
-  return 0;
-}
-
-void* dlopen(const char*, int) {
-  return nullptr;
-}
-
-void* dlsym(void*, const char*) {
-  return nullptr;
-}
-
-int dlclose(void*) {
-  return 0;
-}
-
-char* dlerror(void) {
-  return nullptr;
-}
-
-int dladdr(const void*, Dl_info* info) {
-  if (info != nullptr) {
-    memset(info, 0, sizeof(*info));
   }
   return 0;
 }

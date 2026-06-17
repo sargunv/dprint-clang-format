@@ -350,3 +350,11 @@ Extended LLVM patching: `Program.inc` `Execute`/`Wait` bodies wrapped in
 `execv`, `execve`, `wait`, `wait4`, `kill`, `setsid`, `_exit` — removed **8**
 matching stubs from `wasm_posix_stubs.cpp` (**73 → 65** link-only shims). Smoke
 passes.
+
+### Patch: trim mmap/dl/socket support on wasm
+
+Added `support/patches/dprint-wasm-trim-support-deps.patch` — wasm guards on
+`DynamicLibrary`, `Memory`, `Path` mapped files, and `raw_socket_stream`. Drops
+link-time refs to `dlopen`/`dlsym`/`dlclose`/`dlerror`/`dladdr`, `mmap`/`munmap`/
+`msync`, and socket/`pipe` APIs. Removed **14** matching stubs + unused headers
+(**65 → 51** link-only shims). Smoke passes.

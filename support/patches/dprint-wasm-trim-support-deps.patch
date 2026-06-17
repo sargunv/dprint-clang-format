@@ -1,0 +1,160 @@
+--- a/llvm/lib/Support/Unix/DynamicLibrary.inc
++++ b/llvm/lib/Support/Unix/DynamicLibrary.inc
+@@ -14,17 +14,25 @@
+ #include <dlfcn.h>
+ 
+ DynamicLibrary::HandleSet::~HandleSet() {
++#if !defined(__wasm__)
+   // Close the libraries in reverse order.
+   for (void *Handle : llvm::reverse(Handles))
+     ::dlclose(Handle);
+   if (Process != &Invalid)
+     ::dlclose(Process);
++#endif
+ 
+   // llvm_shutdown called, Return to default
+   DynamicLibrary::SearchOrder = DynamicLibrary::SO_Linker;
+ }
+ 
+ void *DynamicLibrary::HandleSet::DLOpen(const char *File, std::string *Err) {
++#if defined(__wasm__)
++  (void)File;
++  if (Err)
++    *Err = "dlopen() not supported on wasm";
++  return &DynamicLibrary::Invalid;
++#else
+   void *Handle = ::dlopen(File, RTLD_LAZY | RTLD_GLOBAL);
+   if (!Handle) {
+     if (Err)
+@@ -40,12 +48,23 @@
+ #endif
+ 
+   return Handle;
++#endif
+ }
+ 
+-void DynamicLibrary::HandleSet::DLClose(void *Handle) { ::dlclose(Handle); }
++void DynamicLibrary::HandleSet::DLClose(void *Handle) {
++#if !defined(__wasm__)
++  ::dlclose(Handle);
++#endif
++}
+ 
+ void *DynamicLibrary::HandleSet::DLSym(void *Handle, const char *Symbol) {
++#if defined(__wasm__)
++  (void)Handle;
++  (void)Symbol;
++  return nullptr;
++#else
+   return ::dlsym(Handle, Symbol);
++#endif
+ }
+ 
+ #else // !HAVE_DLOPEN
+--- a/llvm/lib/Support/Unix/Memory.inc
++++ b/llvm/lib/Support/Unix/Memory.inc
+@@ -77,6 +77,13 @@
+   if (NumBytes == 0)
+     return MemoryBlock();
+ 
++#if defined(__wasm__)
++  (void)NearBlock;
++  (void)PFlags;
++  EC = std::make_error_code(std::errc::not_enough_memory);
++  return MemoryBlock();
++#endif
++
+   // On platforms that have it, we can use MAP_ANON to get a memory-mapped
+   // page without file backing, but we need a fallback of opening /dev/zero
+   // for strictly POSIX platforms instead.
+@@ -152,6 +159,12 @@
+   if (M.Address == nullptr || M.AllocatedSize == 0)
+     return std::error_code();
+ 
++#if defined(__wasm__)
++  M.Address = nullptr;
++  M.AllocatedSize = 0;
++  return std::error_code();
++#endif
++
+   if (0 != ::munmap(M.Address, M.AllocatedSize))
+     return errnoAsErrorCode();
+ 
+--- a/llvm/lib/Support/raw_socket_stream.cpp
++++ b/llvm/lib/Support/raw_socket_stream.cpp
+@@ -70,6 +70,12 @@
+ }
+ 
+ static Expected<int> getSocketFD(StringRef SocketPath) {
++#if defined(__wasm__)
++  (void)SocketPath;
++  return llvm::make_error<StringError>(
++      std::make_error_code(std::errc::operation_not_supported),
++      "unix sockets are unavailable on wasm");
++#else
+ #ifdef _WIN32
+   SOCKET Socket = socket(AF_UNIX, SOCK_STREAM, 0);
+   if (Socket == INVALID_SOCKET) {
+@@ -100,6 +106,7 @@
+ #else
+   return Socket;
+ #endif // _WIN32
++#endif // __wasm__
+ }
+ 
+ ListeningSocket::ListeningSocket(int SocketFD, StringRef SocketPath,
+@@ -118,6 +125,13 @@
+ 
+ Expected<ListeningSocket> ListeningSocket::createUnix(StringRef SocketPath,
+                                                       int MaxBacklog) {
++#if defined(__wasm__)
++  (void)SocketPath;
++  (void)MaxBacklog;
++  return llvm::make_error<StringError>(
++      std::make_error_code(std::errc::operation_not_supported),
++      "unix sockets are unavailable on wasm");
++#else
+ 
+   // Handle instances where the target socket address already exists and
+   // differentiate between a preexisting file with and without a bound socket
+@@ -193,6 +207,7 @@
+ #else
+   return ListeningSocket{Socket, SocketPath, PipeFD};
+ #endif // _WIN32
++#endif // __wasm__
+ }
+ 
+ // If a file descriptor being monitored by ::poll is closed by another thread,
+@@ -270,6 +285,12 @@
+ 
+ Expected<std::unique_ptr<raw_socket_stream>>
+ ListeningSocket::accept(const std::chrono::milliseconds &Timeout) {
++#if defined(__wasm__)
++  (void)Timeout;
++  return llvm::make_error<StringError>(
++      std::make_error_code(std::errc::operation_not_supported),
++      "unix sockets are unavailable on wasm");
++#else
+   auto getActiveFD = [this]() -> int { return FD; };
+   std::error_code TimeoutErr = manageTimeout(Timeout, getActiveFD, PipeFD[0]);
+   if (TimeoutErr)
+@@ -287,6 +308,7 @@
+     return llvm::make_error<StringError>(getLastSocketErrorCode(),
+                                          "Socket accept failed");
+   return std::make_unique<raw_socket_stream>(AcceptFD);
++#endif
+ }
+ 
+ void ListeningSocket::shutdown() {
+@@ -295,6 +317,11 @@
+   if (ObservedFD == -1)
+     return;
+ 
++#if defined(__wasm__)
++  FD.store(-1);
++  return;
++#endif
++
+   // If FD equals ObservedFD set FD to -1; If FD doesn't equal ObservedFD then
+   // another thread is responsible for shutdown so return
+   if (!FD.compare_exchange_strong(ObservedFD, -1))

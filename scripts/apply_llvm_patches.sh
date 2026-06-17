@@ -53,3 +53,8 @@ apply_patch \
   "$repo_root/support/patches/dprint-wasm-trim-fs-deps.patch" \
   "$source_dir/llvm/lib/Support/Unix/Program.inc" \
   'process execution is unavailable on wasm'
+
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-support-deps.patch" \
+  "$source_dir/llvm/lib/Support/raw_socket_stream.cpp" \
+  'unix sockets are unavailable on wasm'
