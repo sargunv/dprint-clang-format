@@ -54,11 +54,6 @@ int dup(int) {
   return -1;
 }
 
-int dup2(int, int) {
-  errno = EBADF;
-  return -1;
-}
-
 int fcntl(int, int, ...) {
   errno = EBADF;
   return -1;

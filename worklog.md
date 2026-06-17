@@ -358,3 +358,6 @@ Added `support/patches/dprint-wasm-trim-support-deps.patch` — wasm guards on
 link-time refs to `dlopen`/`dlsym`/`dlclose`/`dlerror`/`dladdr`, `mmap`/`munmap`/
 `msync`, and socket/`pipe` APIs. Removed **14** matching stubs + unused headers
 (**65 → 51** link-only shims). Smoke passes.
+
+Follow-up link audit: **1** unused stub remained (`dup2`, leftover from `Program.inc`
+wasm guard); removed it (**51 → 50**). All remaining posix shims are link-required.
