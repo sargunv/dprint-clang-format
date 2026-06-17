@@ -119,7 +119,19 @@
    uint64_t Pos = tell();
    seek(Offset);
    write(Ptr, Size);
---- a/llvm/lib/Support/Unix/Process.inc
++@@ -970,6 +991,13 @@
++ ssize_t raw_fd_stream::read(char *Ptr, size_t Size) {
++   assert(get_fd() >= 0 && "File already closed.");
+++#if defined(__wasm__)
+++  (void)Ptr;
+++  (void)Size;
+++  error_detected(std::make_error_code(std::errc::operation_not_supported));
+++  return -1;
+++#endif
++   ssize_t Ret = ::read(get_fd(), (void *)Ptr, Size);
++   if (Ret >= 0)
++     inc_pos(Ret);
+ --- a/llvm/lib/Support/Unix/Process.inc
 +++ b/llvm/lib/Support/Unix/Process.inc
 @@ -218,6 +218,9 @@
  } // namespace
@@ -154,7 +166,21 @@
    return isatty(fd);
  #else
    // If we don't have isatty, just return false.
---- a/llvm/lib/Support/Unix/Path.inc
++@@ -398,6 +406,9 @@
++ #if !HAVE_DECL_ARC4RANDOM
++ static unsigned GetRandomNumberSeed() {
+++#if defined(__wasm__)
+++  return 0;
+++#else
++   // Attempt to get the initial seed from /dev/urandom, if possible.
++   int urandomFD = open("/dev/urandom", O_RDONLY);
++@@ -425,6 +434,7 @@
++   const auto Now = std::chrono::high_resolution_clock::now();
++   return hash_combine(Now.time_since_epoch().count(), ::getpid());
+++#endif
++ }
++ #endif
+ --- a/llvm/lib/Support/Unix/Path.inc
 +++ b/llvm/lib/Support/Unix/Path.inc
 @@ -1435,6 +1435,10 @@
  namespace path {

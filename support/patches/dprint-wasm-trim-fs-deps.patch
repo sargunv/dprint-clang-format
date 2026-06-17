@@ -42,7 +42,36 @@
      struct stat buf;
 --- a/llvm/lib/Support/Unix/Jobserver.inc
 +++ b/llvm/lib/Support/Unix/Jobserver.inc
-@@ -148,6 +148,10 @@
+@@ -34,6 +34,10 @@
+ /// available jobs (`NumJobs`), then immediately releases them back.
+ JobserverClientImpl::JobserverClientImpl(const JobserverConfig &Config) {
++#if defined(__wasm__)
++  (void)Config;
++  return;
++#endif
+   switch (Config.TheMode) {
+   case JobserverConfig::PosixPipe: {
+     // Duplicate the read and write file descriptors.
+@@ -101,6 +105,9 @@
+ 
+ /// The destructor closes any open file descriptors.
+ JobserverClientImpl::~JobserverClientImpl() {
++#if defined(__wasm__)
++  return;
++#endif
+   if (ReadFD >= 0)
+     ::close(ReadFD);
+   if (WriteFD >= 0)
+@@ -114,6 +121,9 @@
+ /// it fails and returns an invalid JobSlot.
+ JobSlot JobserverClientImpl::tryAcquire() {
++#if defined(__wasm__)
++  return JobSlot();
++#endif
+   if (!IsInitialized)
+     return JobSlot();
+ 
+@@ -148,6 +158,10 @@
    if (!Slot.isValid())
      return;
  
@@ -123,6 +152,42 @@
    struct stat Status;
    int StatRet = ::fstat(FD, &Status);
    return fillStatus(StatRet, Status, Result);
+@@ -980,6 +995,12 @@
+ std::error_code detail::directory_iterator_construct(detail::DirIterState &it,
+                                                     StringRef path,
+                                                     bool follow_symlinks) {
+   sandbox::violationIfEnabled();
+
++#if defined(__wasm__)
++  (void)it;
++  (void)path;
++  (void)follow_symlinks;
++  return std::make_error_code(std::errc::operation_not_supported);
++#endif
++
+   SmallString<128> path_null(path);
+   DIR *directory = ::opendir(path_null.c_str());
+   if (!directory)
+     return errnoAsErrorCode();
+@@ -1115,6 +1136,17 @@
+ std::error_code openFile(const Twine &Name, int &ResultFD,
+                          CreationDisposition Disp, FileAccess Access,
+                          OpenFlags Flags, unsigned Mode) {
+   sandbox::violationIfEnabled();
+
++#if defined(__wasm__)
++  (void)Name;
++  (void)Disp;
++  (void)Access;
++  (void)Flags;
++  (void)Mode;
++  ResultFD = -1;
++  return std::make_error_code(std::errc::operation_not_supported);
++#endif
++
+   int OpenFlags = nativeOpenFlags(Disp, Flags, Access);
+
+   SmallString<128> Storage;
 --- a/llvm/lib/Support/raw_ostream.cpp
 +++ b/llvm/lib/Support/raw_ostream.cpp
 @@ -868,6 +868,8 @@
@@ -135,8 +200,8 @@
    assert(FD >= 0 && "File not yet open!");
    struct stat statbuf;
 
---- /var/folders/51/7gt5zp9d58n2w8qcsmgn8vjr0000gn/T/tmp.ubCyQJ0d2y/Program.inc	2026-06-16 23:27:11
-+++ /Users/sargunv/Code/dprint-experiments/third_party/llvm-project-22.1.7.src/llvm/lib/Support/Unix/Program.inc	2026-06-16 23:26:29
+--- a/llvm/lib/Support/Unix/Program.inc
++++ b/llvm/lib/Support/Unix/Program.inc
 @@ -167,6 +167,11 @@
                      ArrayRef<std::optional<StringRef>> Redirects,
                      unsigned MemoryLimit, std::string *ErrMsg,

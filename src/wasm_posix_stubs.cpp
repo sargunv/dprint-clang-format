@@ -54,11 +54,6 @@ int fcntl(int, int, ...) {
   return -1;
 }
 
-int open(const char*, int, ...) {
-  errno = ENOENT;
-  return -1;
-}
-
 int chdir(const char*) {
   errno = ENOENT;
   return -1;
@@ -99,11 +94,6 @@ int link(const char*, const char*) {
 
 off_t lseek(int, off_t, int) {
   errno = EBADF;
-  return -1;
-}
-
-ssize_t readlink(const char*, char*, size_t) {
-  errno = ENOENT;
   return -1;
 }
 
@@ -197,11 +187,6 @@ int getrusage(int, struct rusage* usage) {
     memset(usage, 0, sizeof(*usage));
   }
   return 0;
-}
-
-DIR* opendir(const char*) {
-  errno = ENOENT;
-  return nullptr;
 }
 
 struct dirent* readdir(DIR*) {
