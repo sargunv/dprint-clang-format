@@ -17,6 +17,7 @@ fi
 mkdir -p "$(dirname "$report_path")"
 
 tmp_objdump="$(mktemp)"
+trap 'rm -f "$tmp_objdump"' EXIT
 wasm-objdump -x "$wasm_path" > "$tmp_objdump"
 
 import_count="$(
@@ -35,7 +36,7 @@ import_count="$(
 )"
 
 {
-  echo "# Probe Wasm Import Report"
+  echo "# Wasm Import Report"
   echo
   echo "- Module: \`$wasm_path\`"
   echo "- Generated: \`$(date -u '+%Y-%m-%dT%H:%M:%SZ')\`"
@@ -52,13 +53,6 @@ import_count="$(
       in_imports { print }
     ' "$tmp_objdump"
   fi
-  echo
-  echo "## Full \`wasm-objdump -x\`"
-  echo
-  echo '```'
-  cat "$tmp_objdump"
-  echo '```'
 } > "$report_path"
 
-rm -f "$tmp_objdump"
 echo "wrote $report_path"

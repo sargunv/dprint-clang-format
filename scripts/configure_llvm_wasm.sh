@@ -7,6 +7,32 @@ cd "$repo_root"
 llvm_version="${LLVM_VERSION:-22.1.7}"
 source_root="third_party/llvm-project-${llvm_version}.src"
 build_dir="${LLVM_WASM_BUILD_DIR:-build/llvm-wasm}"
+host_style="${LLVM_WASM_HOST:-unix}"
+case "$host_style" in
+  unix)
+    host_flags="-DLLVM_ON_UNIX -DHAVE_SYSEXITS_H=1 -DHAVE_SYSCONF=1 -DHAVE_GETRUSAGE=1 -DHAVE_SYS_MMAN_H=1 -DHAVE_DLOPEN=1"
+    ;;
+  win32)
+    host_flags="-DLLVM_ON_WIN32 -DLLVM_ON_UNIX=0"
+    ;;
+  *)
+    echo "unsupported LLVM_WASM_HOST: $host_style (expected unix or win32)" >&2
+    exit 1
+    ;;
+esac
+
+common_cxx_flags="-ffreestanding $host_flags -DCLANG_BUILD_STATIC=1 -fno-exceptions -fno-rtti -fno-threadsafe-statics -nostdinc++ -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -isystem $repo_root/support/libcxx-wasm/include -isystem $repo_root/$source_root/libcxx/include -isystem $repo_root/$source_root/libcxx/src/include -isystem $repo_root/support/wasm-sysroot/include"
+common_c_flags="-ffreestanding $host_flags -DCLANG_BUILD_STATIC=1 -isystem $repo_root/support/wasm-sysroot/include"
+
+native_tool_dir="${LLVM_NATIVE_TOOL_DIR:-$repo_root/$build_dir/NATIVE/bin}"
+if [[ ! -f "$native_tool_dir/llvm-tblgen" && -f "$repo_root/build/llvm-wasm/NATIVE/bin/llvm-tblgen" ]]; then
+  native_tool_dir="$repo_root/build/llvm-wasm/NATIVE/bin"
+fi
+if [[ ! -f "$native_tool_dir/llvm-tblgen" ]]; then
+  echo "native tablegen tools not found at $native_tool_dir" >&2
+  echo "build host tools first: pixi run ninja -C build/llvm-wasm clang-tblgen llvm-tblgen" >&2
+  exit 1
+fi
 
 if [[ ! -f "$source_root/llvm/CMakeLists.txt" ]]; then
   echo "LLVM source not found at $source_root" >&2
@@ -25,12 +51,12 @@ cmake \
   -DCMAKE_C_COMPILER_TARGET=wasm32-unknown-unknown \
   -DCMAKE_CXX_COMPILER_TARGET=wasm32-unknown-unknown \
   -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-  -DCMAKE_C_FLAGS="-ffreestanding -DLLVM_ON_UNIX -DCLANG_BUILD_STATIC=1 -DHAVE_SYSEXITS_H=1 -DHAVE_SYSCONF=1 -DHAVE_GETRUSAGE=1 -DHAVE_SYS_MMAN_H=1 -DHAVE_DLOPEN=1 -isystem $repo_root/support/wasm-sysroot/include" \
-  -DCMAKE_CXX_FLAGS="-ffreestanding -DLLVM_ON_UNIX -DCLANG_BUILD_STATIC=1 -DHAVE_SYSEXITS_H=1 -DHAVE_SYSCONF=1 -DHAVE_GETRUSAGE=1 -DHAVE_SYS_MMAN_H=1 -DHAVE_DLOPEN=1 -fno-exceptions -fno-rtti -fno-threadsafe-statics -nostdinc++ -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -isystem $repo_root/support/libcxx-wasm/include -isystem $repo_root/$source_root/libcxx/include -isystem $repo_root/$source_root/libcxx/src/include -isystem $repo_root/support/wasm-sysroot/include" \
-  -DLLVM_NATIVE_TOOL_DIR="$repo_root/$build_dir/NATIVE/bin" \
-  -DLLVM_HEADERS_TABLEGEN="$repo_root/$build_dir/NATIVE/bin/llvm-min-tblgen" \
-  -DLLVM_TABLEGEN="$repo_root/$build_dir/NATIVE/bin/llvm-tblgen" \
-  -DCLANG_TABLEGEN="$repo_root/$build_dir/NATIVE/bin/clang-tblgen" \
+  -DCMAKE_C_FLAGS="$common_c_flags" \
+  -DCMAKE_CXX_FLAGS="$common_cxx_flags" \
+  -DLLVM_NATIVE_TOOL_DIR="$native_tool_dir" \
+  -DLLVM_HEADERS_TABLEGEN="$native_tool_dir/llvm-min-tblgen" \
+  -DLLVM_TABLEGEN="$native_tool_dir/llvm-tblgen" \
+  -DCLANG_TABLEGEN="$native_tool_dir/clang-tblgen" \
   -DLLVM_ENABLE_PROJECTS=clang \
   -DLLVM_TARGETS_TO_BUILD="" \
   -DLLVM_INCLUDE_TESTS=OFF \

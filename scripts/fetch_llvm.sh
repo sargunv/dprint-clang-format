@@ -29,4 +29,6 @@ fi
 test -f "$source_dir/llvm/CMakeLists.txt"
 test -f "$source_dir/clang/lib/Format/Format.cpp"
 
+scripts/apply_llvm_patches.sh
+
 echo "LLVM source ready: $source_dir"

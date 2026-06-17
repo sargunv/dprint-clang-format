@@ -1,0 +1,169 @@
+--- a/clang/lib/Basic/FileManager.cpp
++++ b/clang/lib/Basic/FileManager.cpp
+@@ -23,6 +23,7 @@
+ #include "llvm/Config/llvm-config.h"
+ #include "llvm/Support/FileSystem.h"
+ #include "llvm/Support/IOSandbox.h"
++#include "llvm/Support/VirtualFileSystem.h"
+ #include "llvm/Support/MemoryBuffer.h"
+ #include "llvm/Support/Path.h"
+ #include "llvm/Support/raw_ostream.h"
+@@ -48,8 +49,13 @@
+       SeenFileEntries(64), NextFileUID(0) {
+   // If the caller doesn't provide a virtual file system, just grab the real
+   // file system.
+-  if (!this->FS)
++  if (!this->FS) {
++#if defined(__wasm__)
++    this->FS = llvm::makeIntrusiveRefCnt<llvm::vfs::InMemoryFileSystem>();
++#else
+     this->FS = llvm::vfs::getRealFileSystem();
++#endif
++  }
+ }
+ 
+ FileManager::~FileManager() = default;
+--- a/clang/lib/Format/Format.cpp
++++ b/clang/lib/Format/Format.cpp
+@@ -4431,8 +4431,13 @@
+         llvm::MemoryBuffer::getMemBuffer(StyleName, Source, false));
+   }
+ 
+-  if (!FS)
++  if (!FS) {
++#if defined(__wasm__)
++    return make_string_error("filesystem style discovery is unavailable on wasm");
++#else
+     FS = llvm::vfs::getRealFileSystem().get();
++#endif
++  }
+   assert(FS);
+ 
+   const bool IsDotHFile = FileName.ends_with(".h");
+--- a/llvm/lib/Support/raw_ostream.cpp
++++ b/llvm/lib/Support/raw_ostream.cpp
+@@ -557,6 +557,11 @@
+                  sys::fs::OpenFlags Flags) {
+   // FIXME(sandboxing): Remove this by adopting `llvm::vfs::OutputBackend`.
+   auto BypassSandbox = sys::sandbox::scopedDisable();
++
++#if defined(__wasm__)
++  EC = std::make_error_code(std::errc::operation_not_supported);
++  return -1;
++#endif
+ 
+   assert((Access & sys::fs::FA_Write) &&
+          "Cannot make a raw_ostream from a read-only descriptor!");
+@@ -564,10 +569,15 @@
+   // Handle "-" as stdout. Note that when we do this, we consider ourself
+   // the owner of stdout and may set the "binary" flag globally based on Flags.
+   if (Filename == "-") {
++#if defined(__wasm__)
++    EC = std::make_error_code(std::errc::operation_not_supported);
++    return -1;
++#else
+     EC = std::error_code();
+     // Change stdout's text/binary mode based on the Flags.
+     sys::ChangeStdoutMode(Flags);
+     return STDOUT_FILENO;
++#endif
+   }
+ 
+   int FD;
+@@ -618,6 +628,12 @@
+     return;
+   }
+ 
++#if defined(__wasm__)
++  SupportsSeeking = false;
++  pos = 0;
++  return;
++#endif
++
+   enable_colors(true);
+ 
+   // Do not attempt to close stdout or stderr. We used to try to maintain the
+@@ -729,6 +745,11 @@
+ #endif
+ 
+ void raw_fd_ostream::write_impl(const char *Ptr, size_t Size) {
++#if defined(__wasm__)
++  (void)Ptr;
++  pos += Size;
++  return;
++#endif
+   if (TiedStream)
+     TiedStream->flush();
+ 
+@@ -806,6 +827,10 @@
+ }
+ 
+ uint64_t raw_fd_ostream::seek(uint64_t off) {
++#if defined(__wasm__)
++  pos = off;
++  return pos;
++#endif
+   assert(SupportsSeeking && "Stream does not support seeking!");
+   flush();
+ #ifdef _WIN32
+@@ -820,6 +845,12 @@
+ 
+ void raw_fd_ostream::pwrite_impl(const char *Ptr, size_t Size,
+                                  uint64_t Offset) {
++#if defined(__wasm__)
++  (void)Ptr;
++  (void)Offset;
++  pos += Size;
++  return;
++#endif
+   uint64_t Pos = tell();
+   seek(Offset);
+   write(Ptr, Size);
+--- a/llvm/lib/Support/Unix/Process.inc
++++ b/llvm/lib/Support/Unix/Process.inc
+@@ -218,6 +218,9 @@
+ } // namespace
+ 
+ std::error_code Process::FixupStandardFileDescriptors() {
++#if defined(__wasm__)
++  return std::error_code();
++#endif
+   int NullFD = -1;
+   FDCloser FDC(NullFD);
+   const int StandardFDs[] = {STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO};
+@@ -252,6 +255,10 @@
+ }
+ 
+ std::error_code Process::SafelyCloseFileDescriptor(int FD) {
++#if defined(__wasm__)
++  (void)FD;
++  return std::error_code();
++#endif
+   // Create a signal set filled with *all* signals.
+   sigset_t FullSet, SavedSet;
+   if (sigfillset(&FullSet) < 0 || sigfillset(&SavedSet) < 0)
+@@ -299,7 +306,10 @@
+ }
+ 
+ bool Process::FileDescriptorIsDisplayed(int fd) {
+-#if HAVE_ISATTY
++#if defined(__wasm__)
++  (void)fd;
++  return false;
++#elif HAVE_ISATTY
+   return isatty(fd);
+ #else
+   // If we don't have isatty, just return false.
+--- a/llvm/lib/Support/Unix/Path.inc
++++ b/llvm/lib/Support/Unix/Path.inc
+@@ -1435,6 +1435,10 @@
+ namespace path {
+ 
+ bool home_directory(SmallVectorImpl<char> &result) {
++#if defined(__wasm__)
++  (void)result;
++  return false;
++#endif
+   std::unique_ptr<char[]> Buf;
+   char *RequestedDir = getenv("HOME");
+   if (!RequestedDir) {

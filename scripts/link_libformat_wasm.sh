@@ -50,7 +50,8 @@ common_flags=(
 )
 
 clang++ "${common_flags[@]}" -c "$entry_source" -o "$entry_object"
-clang++ "${common_flags[@]}" -c src/wasm_support.cpp -o build/wasm_support.o
+clang++ "${common_flags[@]}" -c src/wasm_runtime_core.cpp -o build/wasm_runtime_core.o
+clang++ "${common_flags[@]}" -c src/wasm_posix_stubs.cpp -o build/wasm_posix_stubs.o
 
 libcxx_objects=(
   build/libcxx_chrono.o
@@ -72,18 +73,33 @@ clang++ "${common_flags[@]}" -D_LIBCPP_BUILDING_LIBRARY -c "$llvm_src/libcxx/src
 clang++ "${common_flags[@]}" -D_LIBCPP_BUILDING_LIBRARY -c "$llvm_src/libcxx/src/string.cpp" -o build/libcxx_string.o
 clang++ "${common_flags[@]}" -std=c++20 -D_LIBCPP_BUILDING_LIBRARY -c "$llvm_src/libcxx/src/system_error.cpp" -o build/libcxx_system_error.o
 
-static_libs=()
-while IFS= read -r lib_path; do
-  static_libs+=("$lib_path")
-done < <(find "$llvm_build/lib" -name 'libclang*.a' | sort)
-while IFS= read -r lib_path; do
-  static_libs+=("$lib_path")
-done < <(find "$llvm_build/lib" -name 'libLLVM*.a' | sort)
+# Minimal LibFormat closure from upstream CMake LINK_LIBS (Format -> Basic/Lex/
+# ToolingCore/Inclusions -> Rewrite -> Support/TargetParser/FrontendOpenMP/Demangle).
+# Linking all libLLVM*.a under build/llvm-wasm was unnecessary: --gc-sections produced
+# the same module, but pulled in 40+ archives and slowed linking.
+static_libs=(
+  "$llvm_build/lib/libclangFormat.a"
+  "$llvm_build/lib/libclangToolingInclusions.a"
+  "$llvm_build/lib/libclangToolingCore.a"
+  "$llvm_build/lib/libclangRewrite.a"
+  "$llvm_build/lib/libclangLex.a"
+  "$llvm_build/lib/libclangBasic.a"
+  "$llvm_build/lib/libLLVMFrontendOpenMP.a"
+  "$llvm_build/lib/libLLVMTargetParser.a"
+  "$llvm_build/lib/libLLVMSupport.a"
+  "$llvm_build/lib/libLLVMDemangle.a"
+)
 
-link_libs=()
-for _ in 1 2 3 4; do
-  link_libs+=("${static_libs[@]}")
+for lib_path in "${static_libs[@]}"; do
+  if [[ ! -f "$lib_path" ]]; then
+    echo "required archive not found: $lib_path" >&2
+    echo "run: pixi run ninja -C $llvm_build clangFormat" >&2
+    exit 1
+  fi
 done
+
+# wasm-ld has no --start-group; two passes resolve circular refs between these archives.
+link_libs=("${static_libs[@]}" "${static_libs[@]}")
 
 link_exports=()
 for export_name in $exports; do
@@ -102,7 +118,8 @@ clang++ \
   -Wl,--export-memory \
   -Wl,--gc-sections \
   "$entry_object" \
-  build/wasm_support.o \
+  build/wasm_runtime_core.o \
+  build/wasm_posix_stubs.o \
   "${libcxx_objects[@]}" \
   "${link_libs[@]}" \
   -o "$output_wasm"
