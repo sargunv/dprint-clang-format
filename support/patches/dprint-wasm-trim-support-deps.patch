@@ -158,3 +158,22 @@
    // If FD equals ObservedFD set FD to -1; If FD doesn't equal ObservedFD then
    // another thread is responsible for shutdown so return
    if (!FD.compare_exchange_strong(ObservedFD, -1))
+--- a/llvm/lib/Support/RandomNumberGenerator.cpp
++++ b/llvm/lib/Support/RandomNumberGenerator.cpp
+@@ -78,6 +78,10 @@
+   }
+   return std::error_code(GetLastError(), std::system_category());
+ #else
++#if defined(__wasm__)
++  memset(Buffer, 0, Size);
++  return std::error_code();
++#else
+   int Fd = open("/dev/urandom", O_RDONLY);
+   if (Fd != -1) {
+     std::error_code Ret;
+@@ -93,4 +97,5 @@
+   }
+   return errnoAsErrorCode();
+ #endif
++#endif
+ }

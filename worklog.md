@@ -361,3 +361,11 @@ link-time refs to `dlopen`/`dlsym`/`dlclose`/`dlerror`/`dladdr`, `mmap`/`munmap`
 
 Follow-up link audit: **1** unused stub remained (`dup2`, leftover from `Program.inc`
 wasm guard); removed it (**51 → 50**). All remaining posix shims are link-required.
+
+### Patch: jobserver/RNG/socket poll wasm guards
+
+Extended `dprint-wasm-trim-support-deps.patch`: disable `JobserverClientImpl` I/O on
+wasm, use zero-fill instead of `/dev/urandom` in `getRandomBytes`, and skip
+`manageTimeout`/`poll`. Removed **2** more unused stubs (`dup`, `poll`); **50 → 48**
+link-only shims. `open`/`close`/`read` still required via `Path.cpp`/`raw_ostream` —
+next trim target.

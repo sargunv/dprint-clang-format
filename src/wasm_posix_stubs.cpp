@@ -49,11 +49,6 @@ unsigned int alarm(unsigned int) {
   return 0;
 }
 
-int dup(int) {
-  errno = EBADF;
-  return -1;
-}
-
 int fcntl(int, int, ...) {
   errno = EBADF;
   return -1;
@@ -164,11 +159,6 @@ int fchmod(int, mode_t) {
 
 mode_t umask(mode_t) {
   return 0;
-}
-
-int poll(struct pollfd*, nfds_t, int) {
-  errno = EBADF;
-  return -1;
 }
 
 int mprotect(void*, size_t, int) {
