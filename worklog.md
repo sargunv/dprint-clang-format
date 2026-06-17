@@ -393,3 +393,11 @@ Disabled POSIX crash recovery (`setjmp`/`longjmp`, signal install) and
 `RegisterHandlers`/`unregisterHandlers` on wasm. Removed **7** unused signal
 stubs (`sigaction`, `longjmp`, `raise`, `sigfillset`, `sigemptyset`, `sigaddset`,
 `sigprocmask`); **37 → 30** link-only shims. Smoke passes.
+
+### getenv/path env wasm guards
+
+Guarded `getenv` cold paths: `Process::GetEnv`, terminal columns/colors,
+`findProgramByName`, Jobserver `MAKEFLAGS`, stack symbolizer helpers, plus
+Path.inc `remove`, tilde expansion, `home_directory`, XDG/temp env, and
+`madvise` helpers. Removed **4** unused stubs (`remove`, `lstat`, `madvise`,
+`getpwnam_r`); **30 → 26** link-only shims. Smoke passes.

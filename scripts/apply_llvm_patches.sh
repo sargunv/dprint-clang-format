@@ -74,3 +74,8 @@ apply_patch \
   "$source_dir/llvm/lib/Support/CrashRecoveryContext.cpp" \
   'installExceptionOrSignalHandlers() {}'
 
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-env-path.patch" \
+  "$source_dir/llvm/lib/Support/Jobserver.cpp" \
+  'return nullptr;'
+

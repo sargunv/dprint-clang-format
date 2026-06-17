@@ -1,7 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pwd.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -20,11 +19,6 @@ void free(void*);
 void* memset(void*, int, size_t);
 void* memcpy(void*, const void*, size_t);
 char* strncpy(char*, const char*, size_t);
-
-int remove(const char*) {
-  errno = ENOENT;
-  return -1;
-}
 
 int rename(const char*, const char*) {
   errno = ENOENT;
@@ -95,11 +89,6 @@ int usleep(unsigned int) {
   return 0;
 }
 
-int lstat(const char*, struct stat*) {
-  errno = ENOENT;
-  return -1;
-}
-
 int mkdir(const char*, mode_t) {
   errno = ENOSYS;
   return -1;
@@ -122,10 +111,6 @@ mode_t umask(mode_t) {
 int mprotect(void*, size_t, int) {
   errno = ENOMEM;
   return -1;
-}
-
-int madvise(void*, size_t, int) {
-  return 0;
 }
 
 int statvfs(const char*, struct statvfs*) {
@@ -153,13 +138,6 @@ int setrlimit(int, const struct rlimit*) {
 int getrusage(int, struct rusage* usage) {
   if (usage != nullptr) {
     memset(usage, 0, sizeof(*usage));
-  }
-  return 0;
-}
-
-int getpwnam_r(const char*, struct passwd*, char*, unsigned long, struct passwd** result) {
-  if (result != nullptr) {
-    *result = nullptr;
   }
   return 0;
 }
