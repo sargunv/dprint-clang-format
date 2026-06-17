@@ -26,6 +26,7 @@ Next simplification axes (maintainability-first):
 - Updated `AGENTS.md` to match the single-plugin, maintainability-first goal.
 - Dropped unused `LLVM_WASM_HOST=win32` branch from `configure_llvm_wasm.sh` (experiment
   showed no meaningful stub reduction vs unix).
+- Inlined `build_dprint_plugin.sh` defaults into `link_libformat_wasm.sh` (one fewer script).
 
 ## 2026-06-16 — baseline and dependency audit
 

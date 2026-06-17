@@ -7,10 +7,10 @@ cd "$repo_root"
 llvm_src="${LLVM_SRC:-third_party/llvm-project-22.1.7.src}"
 llvm_build="${LLVM_WASM_BUILD:-build/llvm-wasm}"
 libcxx_include="${LIBCXX_INCLUDE:-$llvm_src/libcxx/include}"
-entry_source="${BUILD_ENTRY_SOURCE:?BUILD_ENTRY_SOURCE is required}"
-entry_object="${BUILD_ENTRY_OBJECT:?BUILD_ENTRY_OBJECT is required}"
-output_wasm="${BUILD_OUTPUT_WASM:?BUILD_OUTPUT_WASM is required}"
-exports="${BUILD_EXPORTS:?BUILD_EXPORTS is required}"
+entry_source="${BUILD_ENTRY_SOURCE:-src/dprint_plugin.cpp}"
+entry_object="${BUILD_ENTRY_OBJECT:-build/dprint_plugin.o}"
+output_wasm="${BUILD_OUTPUT_WASM:-build/dprint-clang-format-plugin.wasm}"
+exports="${BUILD_EXPORTS:-dprint_plugin_version_4 get_shared_bytes_ptr clear_shared_bytes get_plugin_info get_license_text register_config release_config get_config_diagnostics get_resolved_config get_config_file_matching set_file_path set_override_config format format_range get_formatted_text get_error_text check_config_updates}"
 
 if [[ ! -f "$llvm_build/lib/libclangFormat.a" ]]; then
   echo "libclangFormat.a not found at $llvm_build/lib/libclangFormat.a" >&2

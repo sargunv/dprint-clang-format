@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-scripts/build_dprint_plugin.sh
+scripts/link_libformat_wasm.sh
 scripts/report_wasm_imports.sh build/dprint-clang-format-plugin.wasm reports/dprint-plugin-imports.md
 
 node <<'JS'
