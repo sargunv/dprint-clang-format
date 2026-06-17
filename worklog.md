@@ -269,3 +269,8 @@ no link-time references (unused aligned/nothrow `operator new/delete` overloads,
 `std::__libcpp_verbose_abort`). Removed them; kept the overloads the closure actually
 pulls in (`operator new(size_t, nothrow)`, `operator new(size_t, align, nothrow)`, sized
 deletes). Smoke still passes; ~55 lines removed from `wasm_runtime_core.cpp`.
+
+Follow-up audit: **0 unused posix stubs** remain. Removed one more unreferenced
+`operator delete[](void*, size_t, align_val_t)`; runtime core link-time floor reached
+(57/57 defined symbols referenced). Further support-code shrink needs LLVM patches
+(e.g. VFS time/chrono) or building less of clang, not more stub pruning.

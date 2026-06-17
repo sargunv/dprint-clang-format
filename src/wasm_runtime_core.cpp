@@ -383,7 +383,3 @@ void operator delete[](void* ptr, size_t) noexcept {
 void operator delete(void* ptr, size_t, std::align_val_t) noexcept {
   free(ptr);
 }
-
-void operator delete[](void* ptr, size_t, std::align_val_t) noexcept {
-  free(ptr);
-}
