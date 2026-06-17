@@ -51,5 +51,5 @@ apply_patch \
 
 apply_patch \
   "$repo_root/support/patches/dprint-wasm-trim-fs-deps.patch" \
-  "$source_dir/llvm/lib/Support/Path.cpp" \
-  'copy_file_internal'
+  "$source_dir/llvm/lib/Support/Unix/Program.inc" \
+  'process execution is unavailable on wasm'

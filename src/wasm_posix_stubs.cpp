@@ -62,25 +62,6 @@ int dup2(int, int) {
   return -1;
 }
 
-int execv(const char*, char* const[]) {
-  errno = ENOENT;
-  return -1;
-}
-
-int execve(const char*, char* const[], char* const[]) {
-  errno = ENOENT;
-  return -1;
-}
-
-void _exit(int) {
-  abort();
-}
-
-int fork() {
-  errno = ENOSYS;
-  return -1;
-}
-
 int fcntl(int, int, ...) {
   errno = EBADF;
   return -1;
@@ -141,11 +122,6 @@ off_t lseek(int, off_t, int) {
 
 ssize_t readlink(const char*, char*, size_t) {
   errno = ENOENT;
-  return -1;
-}
-
-pid_t setsid() {
-  errno = ENOSYS;
   return -1;
 }
 
@@ -389,21 +365,6 @@ int sigprocmask(int, const sigset_t*, sigset_t*) {
 
 int raise(int) {
   return 0;
-}
-
-int kill(pid_t, int) {
-  errno = ESRCH;
-  return -1;
-}
-
-pid_t wait4(pid_t, int*, int, struct rusage*) {
-  errno = ESRCH;
-  return -1;
-}
-
-int wait(int*) {
-  errno = ESRCH;
-  return -1;
 }
 
 void longjmp(jmp_buf, int) {

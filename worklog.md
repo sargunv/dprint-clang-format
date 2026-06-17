@@ -342,3 +342,11 @@ link time, **0** unused, **0** shipped in final wasm (`--gc-sections` drops the 
 stub object’s C functions from the binary — they exist only to satisfy static archive
 undefined symbols). Further shrink needs more LLVM wasm guards (e.g. `fork`/`exec`/
 `socket`/`mmap` in LLVMSupport cold paths), not more stub pruning.
+
+### Patch: disable Unix process spawn/wait on wasm
+
+Extended LLVM patching: `Program.inc` `Execute`/`Wait` bodies wrapped in
+`#ifndef __wasm__` with early error returns. Drops link-time refs to `fork`,
+`execv`, `execve`, `wait`, `wait4`, `kill`, `setsid`, `_exit` — removed **8**
+matching stubs from `wasm_posix_stubs.cpp` (**73 → 65** link-only shims). Smoke
+passes.
