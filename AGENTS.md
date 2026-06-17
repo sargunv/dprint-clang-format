@@ -15,11 +15,6 @@ Strategies (maintainability-first):
   instead of growing POSIX stubs.
 - Eliminate repo shims when upstream wasm guards or link GC make them unnecessary.
 
-## Progress log
-
-Append meaningful discoveries and improvements to `worklog.md`. Do **not** condense or
-rewrite it — the user reads that file to monitor progress.
-
 ## Relevant Docs
 
 - dprint: https://dprint.dev

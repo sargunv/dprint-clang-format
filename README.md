@@ -49,7 +49,6 @@ int main() { return 1; }
   `wasm32-unknown-unknown`
 - `support/patches/dprint-wasm-no-real-fs.patch` — in-memory VFS and wasm I/O trims
 - `support/wasm-sysroot/` and `support/libcxx-wasm/` — freestanding headers
-- `worklog.md` — simplification notes and discoveries
 
 ## Plugin surface
 
@@ -74,4 +73,3 @@ The plugin does not discover `.clang-format` files from the filesystem.
 
 - Final wasm has zero imports (no WASI, Emscripten, or host syscalls).
 - LLVM source lives in gitignored `third_party/`; patches live in this repo.
-- See `worklog.md` for the active simplification plan.
