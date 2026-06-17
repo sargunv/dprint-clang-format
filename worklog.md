@@ -284,3 +284,21 @@ archives). `pixi run smoke-dprint-plugin` still passes; wasm still ~3.0 MiB.
 
 Note: LLVM still *builds* the archive when compiling clangBasic; skipping that would need
 a wasm-specific CMake patch. Link closure trim is zero-risk for now.
+
+### Link closure audit (8 required archives, 8 libcxx objects)
+
+Trial link omitting one archive/object at a time:
+
+| Removed | Result |
+|---------|--------|
+| `libLLVMFrontendOpenMP` | OK (already dropped) |
+| `libLLVMTargetParser` | FAIL — `llvm::Triple` undefined from clangLex |
+| `libLLVMDemangle` | FAIL — demangle symbols from Support |
+| `libclangToolingInclusions` | FAIL |
+| `libclangToolingCore` | FAIL — `applyAllReplacements` |
+| `libclangRewrite` | FAIL — `Rewriter::ReplaceText` |
+| each `libcxx_*.o` | FAIL — all eight objects required |
+
+**Conclusion:** the nine-archive / eight-libcxx-object closure is minimal for link. Further
+repo shrink is upstream-side (patch cold paths, skip building unused LLVM libs like
+FrontendOpenMP in the wasm cross-build).
