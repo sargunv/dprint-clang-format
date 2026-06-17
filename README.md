@@ -42,8 +42,7 @@ int main() { return 1; }
 ## Layout
 
 - `src/dprint_plugin.cpp` — dprint schema v4 exports and LibFormat wrapper
-- `src/wasm_runtime_core.cpp` — allocator, mem/string helpers, C++ operators
-- `src/wasm_posix_stubs.cpp` — POSIX stubs still required at link time
+- `src/wasm_runtime_core.cpp` — freestanding allocator, mem*, and C++ runtime shims
 - `scripts/link_libformat_wasm.sh` — links the plugin against a minimal LibFormat
   archive set (10 LLVM/clang static libraries, two passes)
 - `scripts/configure_llvm_wasm.sh` — cross-build LLVM/Clang for

@@ -84,3 +84,8 @@ apply_patch \
   "$source_dir/llvm/lib/Support/Unix/Path.inc" \
   'disk_space(const Twine &Path)'
 
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-process-chrono.patch" \
+  "$source_dir/llvm/lib/Support/Unix/Process.inc" \
+  'return Pid(1);'
+

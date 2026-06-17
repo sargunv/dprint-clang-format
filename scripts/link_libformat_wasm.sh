@@ -51,7 +51,6 @@ common_flags=(
 
 clang++ "${common_flags[@]}" -c "$entry_source" -o "$entry_object"
 clang++ "${common_flags[@]}" -c src/wasm_runtime_core.cpp -o build/wasm_runtime_core.o
-clang++ "${common_flags[@]}" -c src/wasm_posix_stubs.cpp -o build/wasm_posix_stubs.o
 
 libcxx_objects=(
   build/libcxx_chrono.o
@@ -120,7 +119,6 @@ clang++ \
   -Wl,--gc-sections \
   "$entry_object" \
   build/wasm_runtime_core.o \
-  build/wasm_posix_stubs.o \
   "${libcxx_objects[@]}" \
   "${link_libs[@]}" \
   -o "$output_wasm"

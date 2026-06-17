@@ -407,3 +407,13 @@ Path.inc `remove`, tilde expansion, `home_directory`, XDG/temp env, and
 Guarded remaining Path.inc filesystem cold paths (`disk_space`, `mkdir`/`link`/
 `rename`, `statvfs`, `chmod`/`umask`, file locks/`fcntl`, `ftruncate`/`fchown`).
 Removed **13** unused stubs; **26 → 13** link-only shims. Smoke passes.
+
+### Process/chrono/watchdog wasm guards — zero POSIX stubs
+
+Guarded remaining LLVMSupport/TargetParser cold paths: `Watchdog` (`alarm`),
+`LockFileManager` (`gethostname`/`getsid`), `Process.inc` (`getpid`/`getrlimit`/
+`getrusage`/`setrlimit`/`sysconf`), `Memory.inc` (`mprotect`), `Chrono.cpp`
+(`strftime`/`gmtime_r`/`localtime_r`), `ProgramStack.cpp`, `Program.inc`
+(`commandLineFitsWithinSystemLimits`), and `Host.inc` (`uname`). Trial link
+without any stub object succeeds; **deleted `src/wasm_posix_stubs.cpp`** (~100
+lines). Captured in `dprint-wasm-trim-process-chrono.patch`. Smoke passes.
