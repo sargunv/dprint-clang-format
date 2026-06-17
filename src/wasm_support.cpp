@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <dlfcn.h>
 #include <dirent.h>
 #include <pwd.h>
@@ -21,13 +22,12 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <new>
+// POSIX, wchar, stdio, and string/stdlib stubs not provided by wasm-cxx-shim.
+// Allocator, mem*, C++ runtime, and libm come from wasm-cxx-shim (see
+// scripts/build_wasm_cxx_shim.sh).
 
 extern "C" {
 
-extern unsigned char __heap_base;
-
-static uintptr_t heap_cursor = 0;
 int errno = 0;
 FILE* stdin = nullptr;
 FILE* stdout = nullptr;
@@ -45,49 +45,6 @@ void _Exit(int) {
   abort();
 }
 
-void* memset(void* dest, int value, size_t count) {
-  unsigned char* out = static_cast<unsigned char*>(dest);
-  for (size_t i = 0; i < count; ++i) {
-    out[i] = static_cast<unsigned char>(value);
-  }
-  return dest;
-}
-
-void* memcpy(void* dest, const void* src, size_t count) {
-  unsigned char* out = static_cast<unsigned char*>(dest);
-  const unsigned char* in = static_cast<const unsigned char*>(src);
-  for (size_t i = 0; i < count; ++i) {
-    out[i] = in[i];
-  }
-  return dest;
-}
-
-void* memmove(void* dest, const void* src, size_t count) {
-  unsigned char* out = static_cast<unsigned char*>(dest);
-  const unsigned char* in = static_cast<const unsigned char*>(src);
-  if (out < in) {
-    for (size_t i = 0; i < count; ++i) {
-      out[i] = in[i];
-    }
-  } else if (out > in) {
-    for (size_t i = count; i > 0; --i) {
-      out[i - 1] = in[i - 1];
-    }
-  }
-  return dest;
-}
-
-int memcmp(const void* left, const void* right, size_t count) {
-  const unsigned char* a = static_cast<const unsigned char*>(left);
-  const unsigned char* b = static_cast<const unsigned char*>(right);
-  for (size_t i = 0; i < count; ++i) {
-    if (a[i] != b[i]) {
-      return static_cast<int>(a[i]) - static_cast<int>(b[i]);
-    }
-  }
-  return 0;
-}
-
 void* memchr(const void* ptr, int value, size_t count) {
   const unsigned char* in = static_cast<const unsigned char*>(ptr);
   for (size_t i = 0; i < count; ++i) {
@@ -96,14 +53,6 @@ void* memchr(const void* ptr, int value, size_t count) {
     }
   }
   return nullptr;
-}
-
-size_t strlen(const char* str) {
-  size_t len = 0;
-  while (str[len] != '\0') {
-    ++len;
-  }
-  return len;
 }
 
 size_t strnlen(const char* str, size_t max_len) {
@@ -169,25 +118,6 @@ char* strsignal(int) {
   return const_cast<char*>("signal");
 }
 
-void* malloc(size_t size) {
-  if (heap_cursor == 0) {
-    heap_cursor = reinterpret_cast<uintptr_t>(&__heap_base);
-  }
-  size = (size + 7u) & ~static_cast<size_t>(7u);
-  void* ptr = reinterpret_cast<void*>(heap_cursor);
-  heap_cursor += size;
-  return ptr;
-}
-
-void* calloc(size_t count, size_t size) {
-  size_t total = count * size;
-  void* ptr = malloc(total);
-  if (ptr != nullptr) {
-    memset(ptr, 0, total);
-  }
-  return ptr;
-}
-
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*)) {}
 
 char* getenv(const char*) {
@@ -197,16 +127,6 @@ char* getenv(const char*) {
 char* realpath(const char*, char*) {
   errno = ENOENT;
   return nullptr;
-}
-
-void free(void*) {}
-
-void* realloc(void* ptr, size_t size) {
-  void* next = malloc(size);
-  if (ptr != nullptr && next != nullptr) {
-    memcpy(next, ptr, size);
-  }
-  return next;
 }
 
 char* strdup(const char* str) {
@@ -990,104 +910,4 @@ __int128 __multi3(__int128 left, __int128 right) {
                                low_product_low);
 }
 
-int __cxa_atexit(void (*)(void*), void*, void*) {
-  return 0;
-}
-
-void __cxa_pure_virtual() {
-  abort();
-}
-
 } // extern "C"
-
-void* operator new(size_t size) {
-  if (void* ptr = malloc(size)) {
-    return ptr;
-  }
-  abort();
-  __builtin_unreachable();
-}
-
-void* operator new[](size_t size) {
-  return operator new(size);
-}
-
-void* operator new(size_t size, const std::nothrow_t&) noexcept {
-  return malloc(size);
-}
-
-void* operator new[](size_t size, const std::nothrow_t& tag) noexcept {
-  return operator new(size, tag);
-}
-
-void* operator new(size_t size, std::align_val_t) {
-  return operator new(size);
-}
-
-void* operator new[](size_t size, std::align_val_t alignment) {
-  return operator new(size, alignment);
-}
-
-void* operator new(size_t size, std::align_val_t, const std::nothrow_t& tag) noexcept {
-  return operator new(size, tag);
-}
-
-void* operator new[](size_t size, std::align_val_t alignment, const std::nothrow_t& tag) noexcept {
-  return operator new(size, alignment, tag);
-}
-
-void operator delete(void* ptr) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, std::align_val_t) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, std::align_val_t) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, size_t) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, size_t) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, size_t, std::align_val_t) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, size_t, std::align_val_t) noexcept {
-  free(ptr);
-}
-
-namespace std {
-
-void __libcpp_verbose_abort(char const*, ...) noexcept {
-  __builtin_trap();
-}
-
-} // namespace std

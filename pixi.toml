@@ -30,3 +30,5 @@ report-probe-imports = "scripts/report_wasm_imports.sh build/probe.wasm reports/
 report-stl-probe-imports = "scripts/report_wasm_imports.sh build/stl-probe.wasm reports/stl-probe-imports.md"
 smoke-dprint-plugin = "scripts/smoke_dprint_plugin.sh"
 smoke-freestanding = "scripts/smoke_freestanding.sh"
+fetch-wasm-cxx-shim = "scripts/fetch_wasm_cxx_shim.sh"
+build-wasm-cxx-shim = "scripts/build_wasm_cxx_shim.sh"

@@ -33,6 +33,7 @@ then run the plugin smoke test:
 ```sh
 mise install
 mise run pixi-install
+pixi run fetch-wasm-cxx-shim
 pixi run fetch-llvm
 pixi run smoke-freestanding
 pixi run configure-llvm-wasm
@@ -73,15 +74,18 @@ The Wasm build avoids Emscripten and WASI:
 
 - `scripts/configure_llvm_wasm.sh` configures LLVM/Clang for
   `wasm32-unknown-unknown`.
+- [wasm-cxx-shim](https://github.com/zmerlynn/wasm-cxx-shim) v0.5.0 provides
+  the freestanding libc, libm, and C++ runtime (`scripts/fetch_wasm_cxx_shim.sh`,
+  `scripts/build_wasm_cxx_shim.sh`).
 - `support/wasm-sysroot/include/` provides the minimal C/POSIX headers needed to
   compile the reachable LLVM/Clang code.
 - `support/libcxx-wasm/include/` overlays libc++ headers to disable or stub
   unsupported runtime facilities.
-- `src/wasm_support.cpp` provides freestanding runtime functions, allocator
-  support, libc/POSIX stubs, C++ allocation hooks, and compiler helper symbols.
-- `scripts/link_libformat_wasm.sh` links the entry object, support runtime,
-  selected libc++ objects, and LLVM/Clang static archives into a standalone wasm
-  module.
+- `src/wasm_support.cpp` provides POSIX/wchar/stdio stubs and supplemental
+  string/stdlib symbols not covered by wasm-cxx-shim (see `support/SUPPORT_AUDIT.md`).
+- `scripts/link_libformat_wasm.sh` links the entry object, wasm-cxx-shim runtime,
+  POSIX stubs, selected libc++ objects, and LLVM/Clang static archives into a
+  standalone wasm module.
 
 The dprint plugin wrapper lives in `src/dprint_plugin.cpp`. It exposes schema v4
 exports such as `dprint_plugin_version_4`, `get_plugin_info`,

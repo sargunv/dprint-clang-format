@@ -18,6 +18,9 @@ if [[ ! -f "$llvm_build/lib/libclangFormat.a" ]]; then
   exit 1
 fi
 
+scripts/build_wasm_cxx_shim.sh
+source scripts/wasm_cxx_shim_objects.sh
+
 mkdir -p build
 
 common_flags=(
@@ -103,6 +106,7 @@ clang++ \
   -Wl,--gc-sections \
   "$entry_object" \
   build/wasm_support.o \
+  "${wasm_cxx_shim_objects[@]}" \
   "${libcxx_objects[@]}" \
   "${link_libs[@]}" \
   -o "$output_wasm"

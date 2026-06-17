@@ -4,6 +4,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+scripts/build_wasm_cxx_shim.sh
+source scripts/wasm_cxx_shim_objects.sh
+
 libcxx_include="${LIBCXX_INCLUDE:-third_party/llvm-project-22.1.7.src/libcxx/include}"
 
 if [[ ! -f "$libcxx_include/string" ]]; then
@@ -47,6 +50,7 @@ clang++ \
   build/stl_probe.o \
   build/wasm_support.o \
   build/libcxx_string.o \
+  "${wasm_cxx_shim_objects[@]}" \
   -o build/stl-probe.wasm
 
 wasm-validate build/stl-probe.wasm
