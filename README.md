@@ -54,8 +54,19 @@ int main() { return 1; }
 ## Plugin surface
 
 The plugin accepts C/C++/Obj-C-style extensions and formats the shared text
-buffer with `clang::format::reformat`. Inline config supports `style`:
-`LLVM`, `Google`, `WebKit`, `Microsoft`.
+buffer with `clang::format::reformat`. Plugin config uses
+[clang-format YAML option names](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)
+as JSON keys (PascalCase, e.g. `BasedOnStyle`, `ColumnLimit`). The legacy
+`style` key is accepted as an alias for `BasedOnStyle`.
+
+dprint global options map into clang-format when not overridden in
+`clangFormat`:
+
+| dprint global | clang-format |
+|---------------|--------------|
+| `lineWidth` | `ColumnLimit` |
+| `indentWidth` | `IndentWidth` |
+| `useTabs` | `UseTab` |
 
 The plugin does not discover `.clang-format` files from the filesystem.
 

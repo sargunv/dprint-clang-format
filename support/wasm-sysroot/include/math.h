@@ -20,6 +20,7 @@ extern "C" {
 double fabs(double value);
 float fabsf(float value);
 long double fabsl(long double value);
+double modf(double value, double* integer_part);
 
 #ifdef __cplusplus
 }

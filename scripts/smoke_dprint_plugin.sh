@@ -37,13 +37,13 @@ WebAssembly.instantiate(bytes, {}).then(({ instance }) => {
     throw new Error(`unexpected config key: ${info.configKey}`);
   }
 
-  writeShared("{\"plugin\":{\"style\":\"LLVM\"},\"global\":{}}");
+  writeShared("{\"plugin\":{\"BasedOnStyle\":\"LLVM\"},\"global\":{}}");
   exports.register_config(1);
 
   const resolvedLength = exports.get_resolved_config(1);
   const resolved = JSON.parse(readShared(resolvedLength));
-  if (resolved.style !== "LLVM") {
-    throw new Error(`unexpected resolved style: ${resolved.style}`);
+  if (resolved.BasedOnStyle !== "LLVM") {
+    throw new Error(`unexpected resolved BasedOnStyle: ${JSON.stringify(resolved)}`);
   }
 
   writeShared("test.cpp");
@@ -61,7 +61,7 @@ WebAssembly.instantiate(bytes, {}).then(({ instance }) => {
     throw new Error(`unexpected formatted text: ${JSON.stringify(formatted)}`);
   }
 
-  console.log(JSON.stringify({ configKey: info.configKey, style: resolved.style, status, formatted }));
+  console.log(JSON.stringify({ configKey: info.configKey, basedOnStyle: resolved.BasedOnStyle, status, formatted }));
 }).catch(error => {
   console.error(error);
   process.exit(1);
@@ -83,7 +83,7 @@ echo "dprint CLI formatted stdin successfully"
 
 plugin_path="$(pwd)/build/dprint-clang-format-plugin.wasm"
 config_path="build/dprint-smoke.json"
-printf '{\n  "plugins": ["%s"],\n  "clangFormat": { "style": "Microsoft" }\n}\n' "$plugin_path" > "$config_path"
+printf '{\n  "plugins": ["%s"],\n  "clangFormat": { "BasedOnStyle": "Microsoft" },\n  "lineWidth": 120,\n  "indentWidth": 4\n}\n' "$plugin_path" > "$config_path"
 
 formatted_with_config="$(
   printf 'void f(){if(true){return;}}\n' |

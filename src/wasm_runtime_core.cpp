@@ -219,32 +219,140 @@ unsigned long strtoul(const char* str, char** end, int) {
   return 0;
 }
 
-long long strtoll(const char* str, char** end, int) {
-  if (end != nullptr) {
-    *end = const_cast<char*>(str);
+static int parse_sign_and_advance(const char** str) {
+  if (**str == '-') {
+    ++(*str);
+    return -1;
   }
-  return 0;
+  if (**str == '+') {
+    ++(*str);
+  }
+  return 1;
 }
 
-unsigned long long strtoull(const char* str, char** end, int) {
+long long strtoll(const char* str, char** end, int base) {
+  if (str == nullptr || base != 10) {
+    if (end != nullptr) {
+      *end = const_cast<char*>(str);
+    }
+    return 0;
+  }
+
+  while (*str == ' ' || *str == '\t' || *str == '\n') {
+    ++str;
+  }
+
+  const int sign = parse_sign_and_advance(&str);
+  if (*str < '0' || *str > '9') {
+    if (end != nullptr) {
+      *end = const_cast<char*>(str);
+    }
+    return 0;
+  }
+
+  long long value = 0;
+  while (*str >= '0' && *str <= '9') {
+    value = value * 10 + (*str - '0');
+    ++str;
+  }
+
   if (end != nullptr) {
     *end = const_cast<char*>(str);
   }
-  return 0;
+  return sign < 0 ? -value : value;
+}
+
+unsigned long long strtoull(const char* str, char** end, int base) {
+  if (str == nullptr || base != 10) {
+    if (end != nullptr) {
+      *end = const_cast<char*>(str);
+    }
+    return 0;
+  }
+
+  while (*str == ' ' || *str == '\t' || *str == '\n') {
+    ++str;
+  }
+
+  if (*str == '+') {
+    ++str;
+  } else if (*str == '-') {
+    if (end != nullptr) {
+      *end = const_cast<char*>(str);
+    }
+    return 0;
+  }
+
+  if (*str < '0' || *str > '9') {
+    if (end != nullptr) {
+      *end = const_cast<char*>(str);
+    }
+    return 0;
+  }
+
+  unsigned long long value = 0;
+  while (*str >= '0' && *str <= '9') {
+    value = value * 10 + static_cast<unsigned>(*str - '0');
+    ++str;
+  }
+
+  if (end != nullptr) {
+    *end = const_cast<char*>(str);
+  }
+  return value;
 }
 
 float strtof(const char* str, char** end) {
-  if (end != nullptr) {
-    *end = const_cast<char*>(str);
-  }
-  return 0;
+  return static_cast<float>(strtod(str, end));
 }
 
 double strtod(const char* str, char** end) {
+  if (str == nullptr) {
+    if (end != nullptr) {
+      *end = nullptr;
+    }
+    return 0.0;
+  }
+
+  while (*str == ' ' || *str == '\t' || *str == '\n') {
+    ++str;
+  }
+
+  const int sign = parse_sign_and_advance(&str);
+  double value = 0.0;
+
+  while (*str >= '0' && *str <= '9') {
+    value = value * 10.0 + static_cast<double>(*str - '0');
+    ++str;
+  }
+
+  if (*str == '.') {
+    ++str;
+    double place = 0.1;
+    while (*str >= '0' && *str <= '9') {
+      value += static_cast<double>(*str - '0') * place;
+      place *= 0.1;
+      ++str;
+    }
+  }
+
+  if (*str == 'e' || *str == 'E') {
+    ++str;
+    int exp_sign = parse_sign_and_advance(&str);
+    int exponent = 0;
+    while (*str >= '0' && *str <= '9') {
+      exponent = exponent * 10 + (*str - '0');
+      ++str;
+    }
+    for (int i = 0; i < exponent; ++i) {
+      value = exp_sign < 0 ? value * 0.1 : value * 10.0;
+    }
+  }
+
   if (end != nullptr) {
     *end = const_cast<char*>(str);
   }
-  return 0;
+  return sign < 0 ? -value : value;
 }
 
 int isalnum(int value) {
@@ -340,6 +448,14 @@ int __cxa_atexit(void (*)(void*), void*, void*) {
 
 void __cxa_pure_virtual() {
   abort();
+}
+
+double modf(double value, double* integer_part) {
+  double integer = __builtin_floor(value);
+  if (integer_part != nullptr) {
+    *integer_part = integer;
+  }
+  return value - integer;
 }
 
 } // extern "C"
