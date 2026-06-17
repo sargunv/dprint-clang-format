@@ -334,3 +334,11 @@ Added `support/patches/dprint-wasm-trim-fs-deps.patch` — wasm guards on cold-p
 `raw_socket_stream`). Link-time refs to `stat`/`fstat`/`write`/`unlink` in our
 closure drop to **zero**; removed the four matching stubs from `wasm_posix_stubs.cpp`
 (~30 lines). **Zero POSIX stubs ship** in final wasm (`llvm-nm` check). Smoke passes.
+
+### POSIX stub plateau (link-only shims)
+
+Post fs-trim audit: **73** functions in `wasm_posix_stubs.cpp`, all **73** referenced at
+link time, **0** unused, **0** shipped in final wasm (`--gc-sections` drops the entire
+stub object’s C functions from the binary — they exist only to satisfy static archive
+undefined symbols). Further shrink needs more LLVM wasm guards (e.g. `fork`/`exec`/
+`socket`/`mmap` in LLVMSupport cold paths), not more stub pruning.
