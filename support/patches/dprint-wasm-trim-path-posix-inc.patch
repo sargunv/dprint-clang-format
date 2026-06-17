@@ -1,0 +1,284 @@
+--- a/llvm/lib/Support/Unix/Path.inc
++++ b/llvm/lib/Support/Unix/Path.inc
+@@ -136,7 +136,7 @@
+   (void)dir;
+   (void)bin;
+   return 1;
+-#endif
++#else
+   struct stat sb;
+   char fullpath[PATH_MAX];
+ 
+@@ -152,6 +152,7 @@
+     return 1;
+ 
+   return 0;
++#endif
+ }
+ 
+ static char *getprogpath(char ret[PATH_MAX], const char *bin) {
+@@ -203,7 +204,7 @@
+   (void)argv0;
+   (void)MainAddr;
+   return "";
+-#endif
++#else
+ 
+ #if defined(__APPLE__)
+@@ -353,6 +354,7 @@
+ #error GetMainExecutable is not implemented on this host yet.
+ #endif
+   return "";
++#endif
+ }
+ 
+ TimePoint<> basic_file_status::getLastAccessedTime() const {
+@@ -384,6 +386,10 @@
+ std::error_code current_path(SmallVectorImpl<char> &result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)result;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   result.clear();
+ 
+   const char *pwd = ::getenv("PWD");
+@@ -414,10 +420,16 @@
+ 
+   result.truncate(strlen(result.data()));
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code set_current_path(const Twine &path) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)path;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -426,6 +438,7 @@
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code create_directory(const Twine &path, bool IgnoreExisting,
+@@ -644,12 +657,18 @@
+ std::error_code access(const Twine &Path, AccessMode Mode) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)Path;
++  (void)Mode;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> PathStorage;
+   StringRef P = Path.toNullTerminatedStringRef(PathStorage);
+ 
+   if (::access(P.begin(), convertAccessMode(Mode)) == -1)
+     return errnoAsErrorCode();
+ 
+   if (Mode == AccessMode::Execute) {
+-#if defined(__wasm__)
+-    return errc::permission_denied;
+-#else
+     // Don't say that directories are executable.
+     struct stat buf;
+     if (0 != stat(P.begin(), &buf))
+       return errc::permission_denied;
+     if (!S_ISREG(buf.st_mode))
+       return errc::permission_denied;
+-#endif
+   }
+ 
+   return std::error_code();
++#endif
+ }
+ 
+@@ -787,6 +806,7 @@
+ #if defined(__wasm__)
+   Result = file_status(file_type::status_error);
+   return std::make_error_code(std::errc::operation_not_supported);
+-#endif
++#else
+ 
+   SmallString<128> PathStorage;
+@@ -795,6 +814,7 @@
+   struct stat Status;
+   int StatRet = Follow ? ::stat(P.begin(), &Status) : ::lstat(P.begin(), &Status);
+   return fillStatus(StatRet, Status, Result);
++#endif
+ }
+ 
+ std::error_code status(int FD, file_status &Result) {
+@@ -804,6 +824,7 @@
+ #if defined(__wasm__)
+   Result = file_status(file_type::status_error);
+   return std::make_error_code(std::errc::operation_not_supported);
+-#endif
++#else
+ 
+   struct stat Status;
+@@ -811,6 +832,7 @@
+   int StatRet = ::fstat(FD, &Status);
+   return fillStatus(StatRet, Status, Result);
++#endif
+ }
+ 
+@@ -987,6 +1010,7 @@
+   (void)path;
+   (void)follow_symlinks;
+   return std::make_error_code(std::errc::operation_not_supported);
+-#endif
++#else
+ 
+   SmallString<128> path_null(path);
+@@ -1001,8 +1025,27 @@
+   path::append(path_null, ".");
+   it.CurrentEntry = directory_entry(path_null.str(), follow_symlinks);
+   return directory_iterator_increment(it);
++#endif
+ }
+ 
+ std::error_code detail::directory_iterator_destruct(detail::DirIterState &it) {
++#if defined(__wasm__)
++  (void)it;
++  it.IterationHandle = 0;
++  it.CurrentEntry = directory_entry();
++  return std::error_code();
++#else
+   if (it.IterationHandle)
+     ::closedir(reinterpret_cast<DIR *>(it.IterationHandle));
+   it.IterationHandle = 0;
+   it.CurrentEntry = directory_entry();
+   return std::error_code();
++#endif
+ }
+ 
+@@ -1026,6 +1069,11 @@
+ std::error_code detail::directory_iterator_increment(detail::DirIterState &It) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)It;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   errno = 0;
+   dirent *CurDir = ::readdir(reinterpret_cast<DIR *>(It.IterationHandle));
+   if (CurDir == nullptr && errno != 0) {
+@@ -1041,6 +1089,7 @@
+   }
+ 
+   return std::error_code();
++#endif
+ }
+ 
+@@ -1062,10 +1111,13 @@
+ #if !defined(F_GETPATH) && defined(TRY_PROC_SELF_FD)
+ static bool hasProcSelfFD() {
++#if defined(__wasm__)
++  return false;
++#else
+   // If we have a /proc filesystem mounted, we can quickly establish the
+   // real name of the file with readlink
+   static const bool Result = (::access("/proc/self/fd", R_OK) == 0);
+   return Result;
++#endif
+ }
+ #endif
+ 
+@@ -1125,6 +1177,7 @@
+   (void)Mode;
+   ResultFD = -1;
+   return std::make_error_code(std::errc::operation_not_supported);
+-#endif
++#else
+ 
+   int OpenFlags = nativeOpenFlags(Disp, Flags, Access);
+@@ -1225,6 +1278,7 @@
+ #endif
+ 
+   return std::error_code();
++#endif
+ }
+ 
+@@ -1252,6 +1306,9 @@
+   // Attempt to get the real name of the file, if the user asked
+   if (!RealPath)
+     return std::error_code();
++#if defined(__wasm__)
++  return std::error_code();
++#else
+   RealPath->clear();
+ #if defined(F_GETPATH)
+@@ -1281,6 +1338,7 @@
+ #endif
+ #endif
+   return std::error_code();
++#endif
+ }
+ 
+@@ -1302,6 +1360,12 @@
+ Expected<size_t> readNativeFile(file_t FD, MutableArrayRef<char> Buf) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  (void)Buf;
++  return errorCodeToError(std::make_error_code(std::errc::operation_not_supported));
++#else
+ #if defined(__APPLE__)
+   size_t Size = std::min<size_t>(Buf.size(), INT32_MAX);
+ #else
+@@ -1321,6 +1385,7 @@
+     return errorCodeToError(make_error_code(errc::is_a_directory));
+ #endif
+   return NumRead;
++#endif
+ }
+ 
+@@ -1327,6 +1392,12 @@
+ Expected<size_t> readNativeFileSlice(file_t FD, MutableArrayRef<char> Buf,
+                                      uint64_t Offset) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  (void)Buf;
++  (void)Offset;
++  return errorCodeToError(std::make_error_code(std::errc::operation_not_supported));
++#else
+ #if defined(__APPLE__)
+   size_t Size = std::min<size_t>(Buf.size(), INT32_MAX);
+ #else
+@@ -1342,6 +1413,7 @@
+   if (NumRead == -1)
+     return errorCodeToError(errnoAsErrorCode());
+   return NumRead;
++#endif
+ }
+ 
+@@ -1455,6 +1527,11 @@
+   if (path.isTriviallyEmpty())
+     return std::error_code();
+ 
++#if defined(__wasm__)
++  (void)expand_tilde;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   if (expand_tilde) {
+     SmallString<128> Storage;
+     path.toVector(Storage);
+@@ -1469,6 +1546,7 @@
+     return errnoAsErrorCode();
+   dest.append(Buffer, Buffer + strlen(Buffer));
+   return std::error_code();
++#endif
+ }
+ 

@@ -64,3 +64,8 @@ apply_patch \
   "$source_dir/llvm/lib/Support/Path.cpp" \
   'void)ToFD;'
 
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-path-posix-inc.patch" \
+  "$source_dir/llvm/lib/Support/Unix/Path.inc" \
+  'void)Buf;'
+
