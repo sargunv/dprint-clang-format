@@ -21,6 +21,12 @@ Next simplification axes (maintainability-first):
 3. Prefer upstream LLVM wasm guards over repo-local stub sprawl when patches stay small.
 4. Defer libFormat subset extraction unless it reduces *source* complexity, not just MiB.
 
+## 2026-06-16 — loop iteration: docs and configure trim
+
+- Updated `AGENTS.md` to match the single-plugin, maintainability-first goal.
+- Dropped unused `LLVM_WASM_HOST=win32` branch from `configure_llvm_wasm.sh` (experiment
+  showed no meaningful stub reduction vs unix).
+
 ## 2026-06-16 — baseline and dependency audit
 
 ### Current state (verified)

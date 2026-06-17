@@ -1,13 +1,13 @@
 # AGENTS.md
 
-This project is a spike toward a sandboxed dprint WebAssembly plugin for
-clang-format using LLVM/Clang LibFormat.
+This project builds a sandboxed dprint WebAssembly plugin for clang-format using
+LLVM/Clang LibFormat.
 
 ## Goal
 
-Validate whether LLVM/Clang LibFormat can be built into a non-Emscripten Wasm
-module whose imports are compatible with dprint's Wasm plugin host. If viable,
-wrap that formatter behind dprint schema v4 plugin exports.
+One maintainable zero-import Wasm dprint plugin: minimal repo surface (fetch LLVM,
+apply patches, build plugin, smoke test), explicit LibFormat link closure, and small
+runtime stub files. Wasm byte size is secondary to source and workflow simplicity.
 
 ## Relevant Docs
 
@@ -26,4 +26,7 @@ wrap that formatter behind dprint schema v4 plugin exports.
 - Do not use Emscripten output for the dprint plugin path.
 - Avoid filesystem-dependent `.clang-format` discovery in the sandboxed plugin;
   pass style configuration through dprint config instead.
-- The first milestone is a small `probe.wasm` plus an import report.
+- LLVM source lives in gitignored `third_party/`; wasm freestanding patches live in
+  `support/patches/`.
+- Success criterion: `pixi run smoke-dprint-plugin` passes (zero Wasm imports, dprint CLI
+  formats stdin).

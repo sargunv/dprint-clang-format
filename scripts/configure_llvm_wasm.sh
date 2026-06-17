@@ -7,20 +7,8 @@ cd "$repo_root"
 llvm_version="${LLVM_VERSION:-22.1.7}"
 source_root="third_party/llvm-project-${llvm_version}.src"
 build_dir="${LLVM_WASM_BUILD_DIR:-build/llvm-wasm}"
-host_style="${LLVM_WASM_HOST:-unix}"
-case "$host_style" in
-  unix)
-    host_flags="-DLLVM_ON_UNIX -DHAVE_SYSEXITS_H=1 -DHAVE_SYSCONF=1 -DHAVE_GETRUSAGE=1 -DHAVE_SYS_MMAN_H=1 -DHAVE_DLOPEN=1"
-    ;;
-  win32)
-    host_flags="-DLLVM_ON_WIN32 -DLLVM_ON_UNIX=0"
-    ;;
-  *)
-    echo "unsupported LLVM_WASM_HOST: $host_style (expected unix or win32)" >&2
-    exit 1
-    ;;
-esac
 
+host_flags="-DLLVM_ON_UNIX -DHAVE_SYSEXITS_H=1 -DHAVE_SYSCONF=1 -DHAVE_GETRUSAGE=1 -DHAVE_SYS_MMAN_H=1 -DHAVE_DLOPEN=1"
 common_cxx_flags="-ffreestanding $host_flags -DCLANG_BUILD_STATIC=1 -fno-exceptions -fno-rtti -fno-threadsafe-statics -nostdinc++ -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -isystem $repo_root/support/libcxx-wasm/include -isystem $repo_root/$source_root/libcxx/include -isystem $repo_root/$source_root/libcxx/src/include -isystem $repo_root/support/wasm-sysroot/include"
 common_c_flags="-ffreestanding $host_flags -DCLANG_BUILD_STATIC=1 -isystem $repo_root/support/wasm-sysroot/include"
 
