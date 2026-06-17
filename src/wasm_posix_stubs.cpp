@@ -175,23 +175,8 @@ int fchown(int, uid_t, gid_t) {
   return -1;
 }
 
-int unlink(const char*) {
-  errno = ENOENT;
-  return -1;
-}
-
 int usleep(unsigned int) {
   return 0;
-}
-
-int fstat(int, struct stat*) {
-  errno = EBADF;
-  return -1;
-}
-
-int stat(const char*, struct stat*) {
-  errno = ENOENT;
-  return -1;
 }
 
 int lstat(const char*, struct stat*) {
@@ -351,11 +336,6 @@ pid_t getsid(pid_t) {
 }
 
 ssize_t read(int, void*, size_t) {
-  errno = EBADF;
-  return -1;
-}
-
-ssize_t write(int, const void*, size_t) {
   errno = EBADF;
   return -1;
 }

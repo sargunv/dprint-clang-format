@@ -325,3 +325,12 @@ Shipped POSIX stubs in final wasm: **7 → 4** (`fstat`, `stat`, `unlink`, `writ
 now-unreferenced `time`/`gmtime`/`localtime` wrappers from `wasm_posix_stubs.cpp`; kept
 `gmtime_r`/`localtime_r`/`strftime` (still required at link by libc++ chrono path).
 Smoke passes.
+
+### Patch: trim LLVMSupport fs deps on wasm
+
+Added `support/patches/dprint-wasm-trim-fs-deps.patch` — wasm guards on cold-path
+`stat`/`fstat`/`write`/`unlink` users in LLVMSupport (`Path.inc`, `Path.cpp`,
+`raw_ostream::preferred_buffer_size`, `ErrorHandling`, `Signals`, `Jobserver`,
+`raw_socket_stream`). Link-time refs to `stat`/`fstat`/`write`/`unlink` in our
+closure drop to **zero**; removed the four matching stubs from `wasm_posix_stubs.cpp`
+(~30 lines). **Zero POSIX stubs ship** in final wasm (`llvm-nm` check). Smoke passes.

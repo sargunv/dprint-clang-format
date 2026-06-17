@@ -1,0 +1,137 @@
+--- a/llvm/lib/Support/Path.cpp
++++ b/llvm/lib/Support/Path.cpp
+@@ -998,6 +998,11 @@
+ }
+ 
+ static std::error_code copy_file_internal(int ReadFD, int WriteFD) {
++#if defined(__wasm__)
++  (void)ReadFD;
++  (void)WriteFD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#endif
+   const size_t BufSize = 4096;
+   char *Buf = new char[BufSize];
+   int BytesRead = 0, BytesWritten = 0;
+--- a/llvm/lib/Support/ErrorHandling.cpp
++++ b/llvm/lib/Support/ErrorHandling.cpp
+@@ -64,6 +64,12 @@
+ #endif
+ 
+ static bool write_retry(int fd, const char *buf, size_t count) {
++#if defined(__wasm__)
++  (void)fd;
++  (void)buf;
++  (void)count;
++  return false;
++#endif
+   while (count > 0) {
+     ssize_t written = sys::RetryAfterSignal(-1, ::write, fd, buf, count);
+     if (written <= 0)
+--- a/llvm/lib/Support/Unix/Signals.inc
++++ b/llvm/lib/Support/Unix/Signals.inc
+@@ -154,6 +154,10 @@
+   }
+ 
+   static void removeFile(char *path) {
++#if defined(__wasm__)
++    (void)path;
++    return;
++#endif
+     // Get the status so we can determine if it's a file or directory. If we
+     // can't stat the file, ignore it.
+     struct stat buf;
+--- a/llvm/lib/Support/Unix/Jobserver.inc
++++ b/llvm/lib/Support/Unix/Jobserver.inc
+@@ -148,6 +148,10 @@
+   if (!Slot.isValid())
+     return;
+ 
++#if defined(__wasm__)
++  return;
++#endif
++
+   // Releasing the implicit slot just makes it available for the next acquire.
+   if (Slot.isImplicit()) {
+     LLVM_DEBUG(dbgs() << "Released implicit job slot.\n");
+--- a/llvm/lib/Support/raw_socket_stream.cpp
++++ b/llvm/lib/Support/raw_socket_stream.cpp
+@@ -295,6 +295,11 @@
+   if (ObservedFD == -1)
+     return;
+ 
++#if defined(__wasm__)
++  FD.store(-1);
++  return;
++#endif
++
+   // If FD equals ObservedFD set FD to -1; If FD doesn't equal ObservedFD then
+   // another thread is responsible for shutdown so return
+   if (!FD.compare_exchange_strong(ObservedFD, -1))
+--- a/llvm/lib/Support/Unix/Path.inc
++++ b/llvm/lib/Support/Unix/Path.inc
+@@ -132,6 +132,12 @@
+     (defined(__sun__) && defined(__svr4__) || defined(__HAIKU__)) ||           \
+     defined(__managarm__)
+ static int test_dir(char ret[PATH_MAX], const char *dir, const char *bin) {
++#if defined(__wasm__)
++  (void)ret;
++  (void)dir;
++  (void)bin;
++  return 1;
++#endif
+   struct stat sb;
+   char fullpath[PATH_MAX];
+ 
+@@ -640,12 +646,16 @@
+     return errnoAsErrorCode();
+ 
+   if (Mode == AccessMode::Execute) {
++#if defined(__wasm__)
++    return errc::permission_denied;
++#else
+     // Don't say that directories are executable.
+     struct stat buf;
+     if (0 != stat(P.begin(), &buf))
+       return errc::permission_denied;
+     if (!S_ISREG(buf.st_mode))
+       return errc::permission_denied;
++#endif
+   }
+ 
+   return std::error_code();
+@@ -780,6 +790,11 @@
+ 
+ std::error_code status(const Twine &Path, file_status &Result, bool Follow) {
+   sandbox::violationIfEnabled();
++
++#if defined(__wasm__)
++  Result = file_status(file_type::status_error);
++  return std::make_error_code(std::errc::operation_not_supported);
++#endif
+ 
+   SmallString<128> PathStorage;
+   StringRef P = Path.toNullTerminatedStringRef(PathStorage);
+@@ -792,6 +807,11 @@
+ std::error_code status(int FD, file_status &Result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  Result = file_status(file_type::status_error);
++  return std::make_error_code(std::errc::operation_not_supported);
++#endif
++
+   struct stat Status;
+   int StatRet = ::fstat(FD, &Status);
+   return fillStatus(StatRet, Status, Result);
+--- a/llvm/lib/Support/raw_ostream.cpp
++++ b/llvm/lib/Support/raw_ostream.cpp
+@@ -868,6 +868,8 @@
+   return raw_ostream::preferred_buffer_size();
+ #elif defined(__MVS__)
+   return raw_ostream::preferred_buffer_size();
++#elif defined(__wasm__)
++  return raw_ostream::preferred_buffer_size();
+ #else
+   assert(FD >= 0 && "File not yet open!");
+   struct stat statbuf;
+

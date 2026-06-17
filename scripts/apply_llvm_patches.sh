@@ -48,3 +48,8 @@ apply_patch \
   "$repo_root/support/patches/dprint-wasm-fixed-date-time.patch" \
   "$source_dir/clang/lib/Lex/PPMacroExpansion.cpp" \
   'Jan  1 1970'
+
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-fs-deps.patch" \
+  "$source_dir/llvm/lib/Support/Path.cpp" \
+  'copy_file_internal'
