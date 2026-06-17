@@ -124,14 +124,6 @@ pid_t getpid() {
   return 1;
 }
 
-unsigned int getuid() {
-  return 0;
-}
-
-int isatty(int) {
-  return 0;
-}
-
 int link(const char*, const char*) {
   errno = ENOENT;
   return -1;
@@ -324,13 +316,6 @@ int closedir(DIR*) {
 }
 
 int getpwnam_r(const char*, struct passwd*, char*, unsigned long, struct passwd** result) {
-  if (result != nullptr) {
-    *result = nullptr;
-  }
-  return 0;
-}
-
-int getpwuid_r(unsigned int, struct passwd*, char*, unsigned long, struct passwd** result) {
   if (result != nullptr) {
     *result = nullptr;
   }

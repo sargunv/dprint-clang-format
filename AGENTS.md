@@ -5,9 +5,20 @@ LLVM/Clang LibFormat.
 
 ## Goal
 
-One maintainable zero-import Wasm dprint plugin: minimal repo surface (fetch LLVM,
-apply patches, build plugin, smoke test), explicit LibFormat link closure, and small
-runtime stub files. Wasm byte size is secondary to source and workflow simplicity.
+One maintainable zero-import Wasm dprint plugin: minimal repo source, explicit LibFormat
+link closure, and as little support/shim code as possible. Wasm byte size is secondary.
+
+Strategies (maintainability-first):
+
+- Build only the clang/LibFormat slice we need (explicit link closure, LLVM CMake trims).
+- Patch LLVM in a small, reviewable way (`support/patches/`) to drop cold-path deps
+  instead of growing POSIX stubs.
+- Eliminate repo shims when upstream wasm guards or link GC make them unnecessary.
+
+## Progress log
+
+Append meaningful discoveries and improvements to `worklog.md`. Do **not** condense or
+rewrite it — the user reads that file to monitor progress.
 
 ## Relevant Docs
 
