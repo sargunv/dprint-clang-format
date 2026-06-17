@@ -261,3 +261,11 @@ Cross-checked `llvm-nm -u` on the 10-archive closure vs symbols defined in
 
 Removed those three from `wasm_posix_stubs.cpp`. `pixi run smoke-dprint-plugin` still passes;
 posix stub count 83 → **80** (~20 lines removed).
+
+### Runtime core link-time trim
+
+Same `llvm-nm -u` cross-check on `wasm_runtime_core.o`: **13** of 70 defined symbols had
+no link-time references (unused aligned/nothrow `operator new/delete` overloads, `atoi`,
+`std::__libcpp_verbose_abort`). Removed them; kept the overloads the closure actually
+pulls in (`operator new(size_t, nothrow)`, `operator new(size_t, align, nothrow)`, sized
+deletes). Smoke still passes; ~55 lines removed from `wasm_runtime_core.cpp`.

@@ -194,10 +194,6 @@ int abs(int value) {
   return value < 0 ? -value : value;
 }
 
-int atoi(const char* str) {
-  return static_cast<int>(strtol(str, nullptr, 10));
-}
-
 static unsigned int rand_state = 1;
 
 void srand(unsigned int seed) {
@@ -364,24 +360,8 @@ void* operator new(size_t size, const std::nothrow_t&) noexcept {
   return malloc(size);
 }
 
-void* operator new[](size_t size, const std::nothrow_t& tag) noexcept {
-  return operator new(size, tag);
-}
-
-void* operator new(size_t size, std::align_val_t) {
-  return operator new(size);
-}
-
-void* operator new[](size_t size, std::align_val_t alignment) {
-  return operator new(size, alignment);
-}
-
 void* operator new(size_t size, std::align_val_t, const std::nothrow_t& tag) noexcept {
   return operator new(size, tag);
-}
-
-void* operator new[](size_t size, std::align_val_t alignment, const std::nothrow_t& tag) noexcept {
-  return operator new(size, alignment, tag);
 }
 
 void operator delete(void* ptr) noexcept {
@@ -389,30 +369,6 @@ void operator delete(void* ptr) noexcept {
 }
 
 void operator delete[](void* ptr) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, std::align_val_t) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, std::align_val_t) noexcept {
-  free(ptr);
-}
-
-void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
-  free(ptr);
-}
-
-void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept {
   free(ptr);
 }
 
@@ -431,11 +387,3 @@ void operator delete(void* ptr, size_t, std::align_val_t) noexcept {
 void operator delete[](void* ptr, size_t, std::align_val_t) noexcept {
   free(ptr);
 }
-
-namespace std {
-
-void __libcpp_verbose_abort(char const*, ...) noexcept {
-  __builtin_trap();
-}
-
-} // namespace std
