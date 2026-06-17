@@ -1,7 +1,4 @@
 #include <errno.h>
-#include <poll.h>
-#include <setjmp.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pwd.h>
@@ -189,43 +186,5 @@ unsigned long strftime(char* buffer, unsigned long size, const char*, const stru
   }
   return 0;
 }
-
-int sigemptyset(sigset_t* set) {
-  if (set != nullptr) {
-    *set = 0;
-  }
-  return 0;
-}
-
-int sigfillset(sigset_t* set) {
-  if (set != nullptr) {
-    *set = ~0ul;
-  }
-  return 0;
-}
-
-int sigaddset(sigset_t* set, int signum) {
-  if (set != nullptr) {
-    *set |= (1ul << static_cast<unsigned>(signum));
-  }
-  return 0;
-}
-
-int sigaction(int, const struct sigaction*, struct sigaction*) {
-  return 0;
-}
-
-int sigprocmask(int, const sigset_t*, sigset_t*) {
-  return 0;
-}
-
-int raise(int) {
-  return 0;
-}
-
-void longjmp(jmp_buf, int) {
-  abort();
-}
-
 
 } // extern "C"

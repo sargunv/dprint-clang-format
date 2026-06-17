@@ -380,3 +380,16 @@ Path.cpp and Path.inc cold paths to wrap bodies in `#else`/`#endif`, including
 `getMainExecutable`. Removed **8** now-unused stubs (`read`, `close`, `access`,
 `chdir`, `getcwd`, `lseek`, `readdir`, `closedir`); **45 → 37** link-only
 shims. Smoke passes.
+
+### Path.inc patch backfill
+
+Added `dprint-wasm-trim-path-posix-inc.patch` (plus `apply_llvm_patches.sh` hook) so
+Path.inc wasm guards survive fresh `fetch-llvm`. Also fixed `status()`/`status(FD)`
+to use `#else` (same early-`#endif` bug).
+
+### CrashRecoveryContext/Signals wasm guards
+
+Disabled POSIX crash recovery (`setjmp`/`longjmp`, signal install) and
+`RegisterHandlers`/`unregisterHandlers` on wasm. Removed **7** unused signal
+stubs (`sigaction`, `longjmp`, `raise`, `sigfillset`, `sigemptyset`, `sigaddset`,
+`sigprocmask`); **37 → 30** link-only shims. Smoke passes.

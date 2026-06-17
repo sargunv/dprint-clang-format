@@ -69,3 +69,8 @@ apply_patch \
   "$source_dir/llvm/lib/Support/Unix/Path.inc" \
   'void)Buf;'
 
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-crash-signals.patch" \
+  "$source_dir/llvm/lib/Support/CrashRecoveryContext.cpp" \
+  'installExceptionOrSignalHandlers() {}'
+

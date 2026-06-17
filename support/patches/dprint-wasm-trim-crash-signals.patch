@@ -1,0 +1,86 @@
+--- a/llvm/lib/Support/CrashRecoveryContext.cpp
++++ b/llvm/lib/Support/CrashRecoveryContext.cpp
+@@ -73,8 +73,10 @@
+     CRC->RetCode = RetCode;
+ 
+     // Jump back to the RunSafely we were called under.
++#if !defined(__wasm__)
+     if (ValidJumpBuffer)
+       longjmp(JumpBuffer, 1);
++#endif
+ 
+     // Otherwise let the caller decide of the outcome of the crash. Currently
+     // this occurs when using SEH on Windows with MSVC or clang-cl.
+@@ -331,6 +333,10 @@
+ 
+ #else // !_WIN32
+ 
++#if defined(__wasm__)
++static void installExceptionOrSignalHandlers() {}
++static void uninstallExceptionOrSignalHandlers() {}
++#else
+ // Generic POSIX implementation.
+ //
+ // This implementation relies on synchronous signals being delivered to the
+@@ -408,6 +414,8 @@
+     sigaction(Signals[i], &PrevActions[i], nullptr);
+ }
+ 
++#endif // !__wasm__
++
+ #endif // !_WIN32
+ 
+ bool CrashRecoveryContext::RunSafely(function_ref<void()> Fn) {
+@@ -417,11 +425,13 @@
+     CrashRecoveryContextImpl *CRCI = new CrashRecoveryContextImpl(this);
+     Impl = CRCI;
+ 
++#if !defined(__wasm__)
+     CRCI->ValidJumpBuffer = true;
+     if (setjmp(CRCI->JumpBuffer) != 0) {
+       return false;
+     }
++#endif
+   }
+ 
+   Fn();
+@@ -469,6 +479,8 @@
+     return false;
+ #if defined(_WIN32)
+   ::RaiseException(RetCode, 0, 0, NULL);
++#elif defined(__wasm__)
++  return false;
+ #else
+   llvm::sys::unregisterHandlers();
+   raise(RetCode - 128);
+--- a/llvm/lib/Support/Unix/Signals.inc
++++ b/llvm/lib/Support/Unix/Signals.inc
+@@ -297,6 +297,9 @@
+ #endif
+ 
+ static void RegisterHandlers() { // Not signal-safe.
++#if defined(__wasm__)
++  return;
++#else
+   // The mutex prevents other threads from registering handlers while we're
+   // doing it. We also have to protect the handlers and their count because
+   // a signal handler could fire while we're registering handlers.
+@@ -345,10 +348,14 @@
+     registerHandler(SIGPIPE, SignalKind::IsKill);
+   for (auto S : InfoSigs)
+     registerHandler(S, SignalKind::IsInfo);
++#endif
+ }
+ 
+ void sys::unregisterHandlers() {
++#if defined(__wasm__)
++  return;
++#else
+   // Restore all of the signal handlers to how they were before we showed up.
+   for (unsigned i = 0, e = NumRegisteredSignals.load(); i != e; ++i) {
+     sigaction(RegisteredSignalInfo[i].SigNo, &RegisteredSignalInfo[i].SA,
+               nullptr);
+     --NumRegisteredSignals;
+   }
++#endif
+ }
