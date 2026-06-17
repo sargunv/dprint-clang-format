@@ -1,0 +1,243 @@
+--- a/llvm/lib/Support/Unix/Path.inc
++++ b/llvm/lib/Support/Unix/Path.inc
+@@ -373,6 +373,10 @@
+ uint32_t file_status::getLinkCount() const { return fs_st_nlinks; }
+ 
+ ErrorOr<space_info> disk_space(const Twine &Path) {
++#if defined(__wasm__)
++  (void)Path;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct STATVFS Vfs;
+   if (::STATVFS(const_cast<char *>(Path.str().c_str()), &Vfs))
+     return errnoAsErrorCode();
+@@ -382,6 +386,7 @@
+   SpaceInfo.free = static_cast<uint64_t>(Vfs.f_bfree) * FrSize;
+   SpaceInfo.available = static_cast<uint64_t>(Vfs.f_bavail) * FrSize;
+   return SpaceInfo;
++#endif
+ }
+ 
+@@ -442,6 +447,12 @@
+ 
+ std::error_code create_directory(const Twine &path, bool IgnoreExisting,
+                                  perms Perms) {
++#if defined(__wasm__)
++  (void)path;
++  (void)IgnoreExisting;
++  (void)Perms;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -452,10 +463,16 @@
+   }
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code create_link(const Twine &to, const Twine &from) {
++#if defined(__wasm__)
++  (void)to;
++  (void)from;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -467,10 +484,16 @@
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code create_hard_link(const Twine &to, const Twine &from) {
++#if defined(__wasm__)
++  (void)to;
++  (void)from;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -482,6 +505,7 @@
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+@@ -600,6 +624,11 @@
+ std::error_code is_local(const Twine &Path, bool &Result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)Path;
++  Result = false;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct STATVFS Vfs;
+   if (::STATVFS(const_cast<char *>(Path.str().c_str()), &Vfs))
+     return errnoAsErrorCode();
+@@ -607,10 +636,16 @@
+   Result = is_local_impl(Vfs);
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code is_local(int FD, bool &Result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  Result = false;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct STATVFS Vfs;
+   if (::FSTATVFS(FD, &Vfs))
+     return errnoAsErrorCode();
+@@ -618,10 +653,16 @@
+   Result = is_local_impl(Vfs);
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code rename(const Twine &from, const Twine &to) {
++#if defined(__wasm__)
++  (void)from;
++  (void)to;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -633,10 +674,16 @@
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code resize_file(int FD, uint64_t Size) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Size;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Use ftruncate as a fallback. It may or may not allocate space. At least on
+   // OS X with HFS+ it does.
+   if (::ftruncate(FD, Size) == -1)
+@@ -644,6 +691,7 @@
+ 
+   return std::error_code();
++#endif
+ }
+ 
+@@ -849,6 +897,9 @@
+ }
+ 
+ unsigned getUmask() {
++#if defined(__wasm__)
++  return 0;
++#else
+   // Chose arbitary new mask and reset the umask to the old mask.
+   // umask(2) never fails so ignore the return of the second call.
+   unsigned Mask = ::umask(0);
+@@ -856,10 +907,16 @@
+   return Mask;
++#endif
+ }
+ 
+ std::error_code setPermissions(const Twine &Path, perms Permissions) {
++#if defined(__wasm__)
++  (void)Path;
++  (void)Permissions;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> PathStorage;
+   StringRef P = Path.toNullTerminatedStringRef(PathStorage);
+ 
+@@ -867,10 +924,16 @@
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code setPermissions(int FD, perms Permissions) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Permissions;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   if (::fchmod(FD, Permissions))
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+@@ -1415,6 +1478,12 @@
+ 
+ std::error_code tryLockFile(int FD, std::chrono::milliseconds Timeout,
+                             LockKind Kind) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Timeout;
++  (void)Kind;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   auto Start = std::chrono::steady_clock::now();
+   auto End = Start + Timeout;
+   do {
+@@ -1442,10 +1511,16 @@
+   } while (std::chrono::steady_clock::now() < End);
+   return make_error_code(errc::no_lock_available);
++#endif
+ }
+ 
+ std::error_code lockFile(int FD, LockKind Kind) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Kind;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct flock Lock;
+   memset(&Lock, 0, sizeof(Lock));
+   switch (Kind) {
+@@ -1461,10 +1536,16 @@
+   if (::fcntl(FD, F_SETLKW, &Lock) != -1)
+     return std::error_code();
+   return errnoAsErrorCode();
++#endif
+ }
+ 
+ std::error_code unlockFile(int FD) {
++#if defined(__wasm__)
++  (void)FD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct flock Lock;
+   Lock.l_type = F_UNLCK;
+   Lock.l_whence = SEEK_SET;
+@@ -1473,10 +1554,16 @@
+   if (::fcntl(FD, F_SETLK, &Lock) != -1)
+     return std::error_code();
+   return errnoAsErrorCode();
++#endif
+ }
+ 
+ std::error_code changeFileOwnership(int FD, uint32_t Owner, uint32_t Group) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Owner;
++  (void)Group;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   auto FChown = [&]() { return ::fchown(FD, Owner, Group); };
+   // Retry if fchown call fails due to interruption.
+   if ((sys::RetryAfterSignal(-1, FChown)) < 0)
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }

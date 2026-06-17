@@ -79,3 +79,8 @@ apply_patch \
   "$source_dir/llvm/lib/Support/Jobserver.cpp" \
   'return nullptr;'
 
+apply_patch \
+  "$repo_root/support/patches/dprint-wasm-trim-path-fs.patch" \
+  "$source_dir/llvm/lib/Support/Unix/Path.inc" \
+  'disk_space(const Twine &Path)'
+

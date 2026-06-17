@@ -401,3 +401,9 @@ Guarded `getenv` cold paths: `Process::GetEnv`, terminal columns/colors,
 Path.inc `remove`, tilde expansion, `home_directory`, XDG/temp env, and
 `madvise` helpers. Removed **4** unused stubs (`remove`, `lstat`, `madvise`,
 `getpwnam_r`); **30 → 26** link-only shims. Smoke passes.
+
+### Path.inc filesystem ops wasm guards
+
+Guarded remaining Path.inc filesystem cold paths (`disk_space`, `mkdir`/`link`/
+`rename`, `statvfs`, `chmod`/`umask`, file locks/`fcntl`, `ftruncate`/`fchown`).
+Removed **13** unused stubs; **26 → 13** link-only shims. Smoke passes.

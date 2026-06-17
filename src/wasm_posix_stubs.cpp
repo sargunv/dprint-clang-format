@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <sys/stat.h>
-#include <sys/statvfs.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <time.h>
@@ -20,18 +18,8 @@ void* memset(void*, int, size_t);
 void* memcpy(void*, const void*, size_t);
 char* strncpy(char*, const char*, size_t);
 
-int rename(const char*, const char*) {
-  errno = ENOENT;
-  return -1;
-}
-
 unsigned int alarm(unsigned int) {
   return 0;
-}
-
-int fcntl(int, int, ...) {
-  errno = EBADF;
-  return -1;
 }
 
 int gethostname(char* name, size_t len) {
@@ -54,11 +42,6 @@ pid_t getpid() {
   return 1;
 }
 
-int link(const char*, const char*) {
-  errno = ENOENT;
-  return -1;
-}
-
 long sysconf(int name) {
   if (name == _SC_PAGE_SIZE) {
     return 65536;
@@ -70,56 +53,8 @@ long sysconf(int name) {
   return -1;
 }
 
-int symlink(const char*, const char*) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int ftruncate(int, off_t) {
-  errno = EBADF;
-  return -1;
-}
-
-int fchown(int, uid_t, gid_t) {
-  errno = EBADF;
-  return -1;
-}
-
-int usleep(unsigned int) {
-  return 0;
-}
-
-int mkdir(const char*, mode_t) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int chmod(const char*, mode_t) {
-  errno = ENOENT;
-  return -1;
-}
-
-int fchmod(int, mode_t) {
-  errno = EBADF;
-  return -1;
-}
-
-mode_t umask(mode_t) {
-  return 0;
-}
-
 int mprotect(void*, size_t, int) {
   errno = ENOMEM;
-  return -1;
-}
-
-int statvfs(const char*, struct statvfs*) {
-  errno = ENOENT;
-  return -1;
-}
-
-int fstatvfs(int, struct statvfs*) {
-  errno = EBADF;
   return -1;
 }
 
