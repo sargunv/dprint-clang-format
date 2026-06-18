@@ -1,23 +1,3 @@
---- a/llvm/lib/Support/Path.cpp
-+++ b/llvm/lib/Support/Path.cpp
-@@ -998,6 +998,7 @@
- }
- 
- static std::error_code copy_file_internal(int ReadFD, int WriteFD) {
-+#if defined(__wasm__)
-+  (void)ReadFD;
-+  (void)WriteFD;
-+  return std::make_error_code(std::errc::operation_not_supported);
-+#else
-   const size_t BufSize = 4096;
-   char *Buf = new char[BufSize];
-   int BytesRead = 0, BytesWritten = 0;
-@@ -1023,6 +1024,7 @@
-   if (BytesRead < 0 || BytesWritten < 0)
-     return errnoAsErrorCode();
-   return std::error_code();
-+#endif
- }
 --- a/llvm/lib/Support/ErrorHandling.cpp
 +++ b/llvm/lib/Support/ErrorHandling.cpp
 @@ -64,6 +64,12 @@
@@ -33,22 +13,157 @@
    while (count > 0) {
      ssize_t written = sys::RetryAfterSignal(-1, ::write, fd, buf, count);
      if (written <= 0)
---- a/llvm/lib/Support/Unix/Signals.inc
-+++ b/llvm/lib/Support/Unix/Signals.inc
-@@ -154,6 +154,10 @@
-   }
- 
-   static void removeFile(char *path) {
-+#if defined(__wasm__)
-+    (void)path;
-+    return;
+--- a/llvm/lib/Support/Path.cpp
++++ b/llvm/lib/Support/Path.cpp
+@@ -885,8 +885,10 @@
+   auto EC = createUniqueFile(Model, FD, ResultPath, OF_None, Mode);
+   if (EC)
+     return EC;
++#if !defined(__wasm__)
+   // FD is only needed to avoid race conditions. Close it right away.
+   close(FD);
 +#endif
-     // Get the status so we can determine if it's a file or directory. If we
-     // can't stat the file, ignore it.
-     struct stat buf;
+   return EC;
+ }
+ 
+@@ -931,8 +933,10 @@
+   auto EC = createTemporaryFile(Prefix, Suffix, FD, ResultPath, Flags);
+   if (EC)
+     return EC;
++#if !defined(__wasm__)
+   // FD is only needed to avoid race conditions. Close it right away.
+   close(FD);
++#endif
+   return EC;
+ }
+ 
+@@ -998,6 +1002,11 @@
+ }
+ 
+ static std::error_code copy_file_internal(int ReadFD, int WriteFD) {
++#if defined(__wasm__)
++  (void)ReadFD;
++  (void)WriteFD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   const size_t BufSize = 4096;
+   char *Buf = new char[BufSize];
+   int BytesRead = 0, BytesWritten = 0;
+@@ -1019,10 +1028,16 @@
+   if (BytesRead < 0 || BytesWritten < 0)
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+ #ifndef __APPLE__
+ std::error_code copy_file(const Twine &From, const Twine &To) {
++#if defined(__wasm__)
++  (void)From;
++  (void)To;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   int ReadFD, WriteFD;
+   if (std::error_code EC = openFileForRead(From, ReadFD, OF_None))
+     return EC;
+@@ -1038,10 +1053,16 @@
+   close(WriteFD);
+ 
+   return EC;
++#endif
+ }
+ #endif
+ 
+ std::error_code copy_file(const Twine &From, int ToFD) {
++#if defined(__wasm__)
++  (void)From;
++  (void)ToFD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   int ReadFD;
+   if (std::error_code EC = openFileForRead(From, ReadFD, OF_None))
+     return EC;
+@@ -1051,11 +1072,16 @@
+   close(ReadFD);
+ 
+   return EC;
++#endif
+ }
+ 
+ ErrorOr<MD5::MD5Result> md5_contents(int FD) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   MD5 Hash;
+ 
+   constexpr size_t BufSize = 4096;
+@@ -1073,11 +1099,16 @@
+   MD5::MD5Result Result;
+   Hash.final(Result);
+   return Result;
++#endif
+ }
+ 
+ ErrorOr<MD5::MD5Result> md5_contents(const Twine &Path) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)Path;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   int FD;
+   if (auto EC = openFileForRead(Path, FD, OF_None))
+     return EC;
+@@ -1085,6 +1116,7 @@
+   auto Result = md5_contents(FD);
+   close(FD);
+   return Result;
++#endif
+ }
+ 
+ bool exists(const basic_file_status &status) {
+@@ -1250,10 +1282,12 @@
+ 
+ Error TempFile::discard() {
+   Done = true;
++#if !defined(__wasm__)
+   if (FD != -1 && close(FD) == -1) {
+     std::error_code EC = errnoAsErrorCode();
+     return errorCodeToError(EC);
+   }
++#endif
+   FD = -1;
+ 
+ #ifdef _WIN32
+@@ -1320,8 +1354,10 @@
+   if (!RenameEC)
+     TmpName = "";
+ 
++#if !defined(__wasm__)
+   if (close(FD) == -1)
+     return errorCodeToError(errnoAsErrorCode());
++#endif
+   FD = -1;
+ 
+   return errorCodeToError(RenameEC);
+@@ -1340,8 +1376,10 @@
+ 
+   TmpName = "";
+ 
++#if !defined(__wasm__)
+   if (close(FD) == -1)
+     return errorCodeToError(errnoAsErrorCode());
++#endif
+   FD = -1;
+ 
+   return Error::success();
 --- a/llvm/lib/Support/Unix/Jobserver.inc
 +++ b/llvm/lib/Support/Unix/Jobserver.inc
-@@ -34,6 +34,10 @@
+@@ -35,6 +35,10 @@
+ /// all available tokens from the jobserver to determine the total number of
  /// available jobs (`NumJobs`), then immediately releases them back.
  JobserverClientImpl::JobserverClientImpl(const JobserverConfig &Config) {
 +#if defined(__wasm__)
@@ -58,7 +173,7 @@
    switch (Config.TheMode) {
    case JobserverConfig::PosixPipe: {
      // Duplicate the read and write file descriptors.
-@@ -101,6 +105,9 @@
+@@ -99,6 +103,9 @@
  
  /// The destructor closes any open file descriptors.
  JobserverClientImpl::~JobserverClientImpl() {
@@ -68,7 +183,8 @@
    if (ReadFD >= 0)
      ::close(ReadFD);
    if (WriteFD >= 0)
-@@ -114,6 +121,9 @@
+@@ -112,6 +119,9 @@
+ /// explicit job slot. The read is non-blocking; if no token is available,
  /// it fails and returns an invalid JobSlot.
  JobSlot JobserverClientImpl::tryAcquire() {
 +#if defined(__wasm__)
@@ -88,20 +204,6 @@
    // Releasing the implicit slot just makes it available for the next acquire.
    if (Slot.isImplicit()) {
      LLVM_DEBUG(dbgs() << "Released implicit job slot.\n");
---- a/llvm/lib/Support/raw_socket_stream.cpp
-+++ b/llvm/lib/Support/raw_socket_stream.cpp
-@@ -295,6 +295,11 @@
-   if (ObservedFD == -1)
-     return;
- 
-+#if defined(__wasm__)
-+  FD.store(-1);
-+  return;
-+#endif
-+
-   // If FD equals ObservedFD set FD to -1; If FD doesn't equal ObservedFD then
-   // another thread is responsible for shutdown so return
-   if (!FD.compare_exchange_strong(ObservedFD, -1))
 --- a/llvm/lib/Support/Unix/Path.inc
 +++ b/llvm/lib/Support/Unix/Path.inc
 @@ -132,6 +132,12 @@
@@ -113,74 +215,488 @@
 +  (void)dir;
 +  (void)bin;
 +  return 1;
-+#endif
++#else
    struct stat sb;
    char fullpath[PATH_MAX];
  
-@@ -640,12 +646,16 @@
+@@ -146,6 +152,7 @@
+     return 1;
+ 
+   return 0;
++#endif
+ }
+ 
+ static char *getprogpath(char ret[PATH_MAX], const char *bin) {
+@@ -194,6 +201,12 @@
+ std::string getMainExecutable(const char *argv0, void *MainAddr) {
+   auto BypassSandbox = sandbox::scopedDisable();
+ 
++#if defined(__wasm__)
++  (void)argv0;
++  (void)MainAddr;
++  return "";
++#else
++
+ #if defined(__APPLE__)
+   // On OS X the executable path is saved to the stack by dyld. Reading it
+   // from there is much faster than calling dladdr, especially for large
+@@ -342,6 +355,7 @@
+ #error GetMainExecutable is not implemented on this host yet.
+ #endif
+   return "";
++#endif
+ }
+ 
+ TimePoint<> basic_file_status::getLastAccessedTime() const {
+@@ -359,6 +373,10 @@
+ uint32_t file_status::getLinkCount() const { return fs_st_nlinks; }
+ 
+ ErrorOr<space_info> disk_space(const Twine &Path) {
++#if defined(__wasm__)
++  (void)Path;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct STATVFS Vfs;
+   if (::STATVFS(const_cast<char *>(Path.str().c_str()), &Vfs))
+     return errnoAsErrorCode();
+@@ -368,11 +386,16 @@
+   SpaceInfo.free = static_cast<uint64_t>(Vfs.f_bfree) * FrSize;
+   SpaceInfo.available = static_cast<uint64_t>(Vfs.f_bavail) * FrSize;
+   return SpaceInfo;
++#endif
+ }
+ 
+ std::error_code current_path(SmallVectorImpl<char> &result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)result;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   result.clear();
+ 
+   const char *pwd = ::getenv("PWD");
+@@ -403,11 +426,16 @@
+ 
+   result.truncate(strlen(result.data()));
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code set_current_path(const Twine &path) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)path;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -415,10 +443,17 @@
      return errnoAsErrorCode();
  
-   if (Mode == AccessMode::Execute) {
-+#if defined(__wasm__)
-+    return errc::permission_denied;
-+#else
-     // Don't say that directories are executable.
-     struct stat buf;
-     if (0 != stat(P.begin(), &buf))
-       return errc::permission_denied;
-     if (!S_ISREG(buf.st_mode))
-       return errc::permission_denied;
+   return std::error_code();
 +#endif
+ }
+ 
+ std::error_code create_directory(const Twine &path, bool IgnoreExisting,
+                                  perms Perms) {
++#if defined(__wasm__)
++  (void)path;
++  (void)IgnoreExisting;
++  (void)Perms;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -428,11 +463,17 @@
    }
  
    return std::error_code();
-@@ -780,6 +790,11 @@
++#endif
+ }
  
+ // Note that we are using symbolic link because hard links are not supported by
+ // all filesystems (SMB doesn't).
+ std::error_code create_link(const Twine &to, const Twine &from) {
++#if defined(__wasm__)
++  (void)to;
++  (void)from;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -443,9 +484,15 @@
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code create_hard_link(const Twine &to, const Twine &from) {
++#if defined(__wasm__)
++  (void)to;
++  (void)from;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -456,9 +503,15 @@
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code remove(const Twine &path, bool IgnoreNonExisting) {
++#if defined(__wasm__)
++  (void)path;
++  (void)IgnoreNonExisting;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> path_storage;
+   StringRef p = path.toNullTerminatedStringRef(path_storage);
+ 
+@@ -483,6 +536,7 @@
+   }
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ static bool is_local_impl(struct STATVFS &Vfs) {
+@@ -572,26 +626,43 @@
+ std::error_code is_local(const Twine &Path, bool &Result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)Path;
++  Result = false;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct STATVFS Vfs;
+   if (::STATVFS(const_cast<char *>(Path.str().c_str()), &Vfs))
+     return errnoAsErrorCode();
+ 
+   Result = is_local_impl(Vfs);
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code is_local(int FD, bool &Result) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  Result = false;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct STATVFS Vfs;
+   if (::FSTATVFS(FD, &Vfs))
+     return errnoAsErrorCode();
+ 
+   Result = is_local_impl(Vfs);
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code rename(const Twine &from, const Twine &to) {
++#if defined(__wasm__)
++  (void)from;
++  (void)to;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Get arguments.
+   SmallString<128> from_storage;
+   SmallString<128> to_storage;
+@@ -602,15 +673,22 @@
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code resize_file(int FD, uint64_t Size) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Size;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   // Use ftruncate as a fallback. It may or may not allocate space. At least on
+   // OS X with HFS+ it does.
+   if (::ftruncate(FD, Size) == -1)
+     return errnoAsErrorCode();
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code resize_file_sparse(int FD, uint64_t Size) {
+@@ -633,6 +711,11 @@
+ std::error_code access(const Twine &Path, AccessMode Mode) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)Path;
++  (void)Mode;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> PathStorage;
+   StringRef P = Path.toNullTerminatedStringRef(PathStorage);
+ 
+@@ -649,6 +732,7 @@
+   }
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ bool can_execute(const Twine &Path) {
+@@ -675,6 +759,10 @@
+ }
+ 
+ static void expandTildeExpr(SmallVectorImpl<char> &Path) {
++#if defined(__wasm__)
++  (void)Path;
++  return;
++#else
+   StringRef PathStr(Path.begin(), Path.size());
+   if (PathStr.empty() || !PathStr.starts_with("~"))
+     return;
+@@ -718,6 +806,7 @@
+   Path.clear();
+   Path.append(Entry->pw_dir, Entry->pw_dir + strlen(Entry->pw_dir));
+   llvm::sys::path::append(Path, Storage);
++#endif
+ }
+ 
+ void expand_tilde(const Twine &path, SmallVectorImpl<char> &dest) {
+@@ -781,43 +870,69 @@
  std::error_code status(const Twine &Path, file_status &Result, bool Follow) {
    sandbox::violationIfEnabled();
-+
+ 
 +#if defined(__wasm__)
 +  Result = file_status(file_type::status_error);
 +  return std::make_error_code(std::errc::operation_not_supported);
-+#endif
- 
++#else
    SmallString<128> PathStorage;
    StringRef P = Path.toNullTerminatedStringRef(PathStorage);
-@@ -792,6 +807,11 @@
+ 
+   struct stat Status;
+   int StatRet = (Follow ? ::stat : ::lstat)(P.begin(), &Status);
+   return fillStatus(StatRet, Status, Result);
++#endif
+ }
+ 
  std::error_code status(int FD, file_status &Result) {
    sandbox::violationIfEnabled();
  
 +#if defined(__wasm__)
 +  Result = file_status(file_type::status_error);
 +  return std::make_error_code(std::errc::operation_not_supported);
-+#endif
-+
++#else
    struct stat Status;
    int StatRet = ::fstat(FD, &Status);
    return fillStatus(StatRet, Status, Result);
-@@ -980,6 +995,12 @@
- std::error_code detail::directory_iterator_construct(detail::DirIterState &it,
-                                                     StringRef path,
-                                                     bool follow_symlinks) {
++#endif
+ }
+ 
+ unsigned getUmask() {
++#if defined(__wasm__)
++  return 0;
++#else
+   // Chose arbitary new mask and reset the umask to the old mask.
+   // umask(2) never fails so ignore the return of the second call.
+   unsigned Mask = ::umask(0);
+   (void)::umask(Mask);
+   return Mask;
++#endif
+ }
+ 
+ std::error_code setPermissions(const Twine &Path, perms Permissions) {
++#if defined(__wasm__)
++  (void)Path;
++  (void)Permissions;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   SmallString<128> PathStorage;
+   StringRef P = Path.toNullTerminatedStringRef(PathStorage);
+ 
+   if (::chmod(P.begin(), Permissions))
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code setPermissions(int FD, perms Permissions) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Permissions;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   if (::fchmod(FD, Permissions))
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code setLastAccessAndModificationTime(int FD, TimePoint<> AccessTime,
+@@ -859,6 +974,12 @@
+                                          mapmode Mode) {
+   assert(Size != 0);
+ 
++#if defined(__wasm__)
++  (void)FD;
++  (void)Offset;
++  (void)Mode;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   int flags = (Mode == readwrite) ? MAP_SHARED : MAP_PRIVATE;
+   int prot = (Mode == readonly) ? PROT_READ : (PROT_READ | PROT_WRITE);
+ #if defined(MAP_NORESERVE)
+@@ -888,6 +1009,7 @@
+   if (Mapping == MAP_FAILED)
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+ mapped_file_region::mapped_file_region(int fd, mapmode mode, size_t length,
+@@ -902,20 +1024,31 @@
+ }
+ 
+ void mapped_file_region::unmapImpl() {
++#if defined(__wasm__)
++  Mapping = nullptr;
++#else
+   if (Mapping)
+     ::munmap(Mapping, Size);
++#endif
+ }
+ 
+ std::error_code mapped_file_region::sync() const {
++#if defined(__wasm__)
++  return std::error_code();
++#else
+   if (int Res = ::msync(Mapping, Size, MS_SYNC))
+     return std::error_code(Res, std::generic_category());
+   return std::error_code();
++#endif
+ }
+ 
+ void mapped_file_region::dontNeedImpl() {
+   assert(Mode == mapped_file_region::readonly);
+   if (!Mapping)
+     return;
++#if defined(__wasm__)
++  return;
++#else
+ #if defined(__MVS__) || defined(_AIX)
+     // If we don't have madvise, or it isn't beneficial, treat this as a no-op.
+ #elif defined(POSIX_MADV_DONTNEED)
+@@ -923,12 +1056,16 @@
+ #else
+   ::madvise(Mapping, Size, MADV_DONTNEED);
+ #endif
++#endif
+ }
+ 
+ void mapped_file_region::willNeedImpl() {
+   assert(Mode == mapped_file_region::readonly);
+   if (!Mapping)
+     return;
++#if defined(__wasm__)
++  return;
++#else
+ #if defined(__MVS__) || defined(_AIX)
+   // If we don't have madvise, or it isn't beneficial, treat this as a no-op.
+ #elif defined(POSIX_MADV_WILLNEED)
+@@ -936,6 +1073,7 @@
+ #else
+   ::madvise(Mapping, Size, MADV_WILLNEED);
+ #endif
++#endif
+ }
+ 
+ int mapped_file_region::alignment() { return Process::getPageSizeEstimate(); }
+@@ -945,6 +1083,12 @@
+                                                      bool follow_symlinks) {
    sandbox::violationIfEnabled();
-
+ 
 +#if defined(__wasm__)
 +  (void)it;
 +  (void)path;
 +  (void)follow_symlinks;
 +  return std::make_error_code(std::errc::operation_not_supported);
-+#endif
-+
++#else
    SmallString<128> path_null(path);
    DIR *directory = ::opendir(path_null.c_str());
    if (!directory)
-     return errnoAsErrorCode();
-@@ -1115,6 +1136,17 @@
- std::error_code openFile(const Twine &Name, int &ResultFD,
-                          CreationDisposition Disp, FileAccess Access,
+@@ -955,14 +1099,22 @@
+   path::append(path_null, ".");
+   it.CurrentEntry = directory_entry(path_null.str(), follow_symlinks);
+   return directory_iterator_increment(it);
++#endif
+ }
+ 
+ std::error_code detail::directory_iterator_destruct(detail::DirIterState &it) {
++#if defined(__wasm__)
++  (void)it;
++  it.IterationHandle = 0;
++  it.CurrentEntry = directory_entry();
++  return std::error_code();
++#else
+   if (it.IterationHandle)
+     ::closedir(reinterpret_cast<DIR *>(it.IterationHandle));
+   it.IterationHandle = 0;
+   it.CurrentEntry = directory_entry();
+   return std::error_code();
++#endif
+ }
+ 
+ static file_type direntType(dirent *Entry) {
+@@ -982,6 +1134,10 @@
+ std::error_code detail::directory_iterator_increment(detail::DirIterState &It) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)It;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   errno = 0;
+   dirent *CurDir = ::readdir(reinterpret_cast<DIR *>(It.IterationHandle));
+   if (CurDir == nullptr && errno != 0) {
+@@ -997,6 +1153,7 @@
+   }
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ ErrorOr<basic_file_status> directory_entry::status() const {
+@@ -1018,10 +1175,14 @@
+ 
+ #if !defined(F_GETPATH) && defined(TRY_PROC_SELF_FD)
+ static bool hasProcSelfFD() {
++#if defined(__wasm__)
++  return false;
++#else
+   // If we have a /proc filesystem mounted, we can quickly establish the
+   // real name of the file with readlink
+   static const bool Result = (::access("/proc/self/fd", R_OK) == 0);
+   return Result;
++#endif
+ }
+ #endif
+ 
+@@ -1073,6 +1234,15 @@
                           OpenFlags Flags, unsigned Mode) {
    sandbox::violationIfEnabled();
-
+ 
 +#if defined(__wasm__)
 +  (void)Name;
 +  (void)Disp;
@@ -189,26 +705,244 @@
 +  (void)Mode;
 +  ResultFD = -1;
 +  return std::make_error_code(std::errc::operation_not_supported);
-+#endif
-+
++#else
    int OpenFlags = nativeOpenFlags(Disp, Flags, Access);
-
+ 
    SmallString<128> Storage;
---- a/llvm/lib/Support/raw_ostream.cpp
-+++ b/llvm/lib/Support/raw_ostream.cpp
-@@ -868,6 +868,8 @@
-   return raw_ostream::preferred_buffer_size();
- #elif defined(__MVS__)
-   return raw_ostream::preferred_buffer_size();
-+#elif defined(__wasm__)
-+  return raw_ostream::preferred_buffer_size();
+@@ -1172,6 +1342,7 @@
+ #endif
+ 
+   return std::error_code();
++#endif
+ }
+ 
+ Expected<int> openNativeFile(const Twine &Name, CreationDisposition Disp,
+@@ -1199,6 +1370,9 @@
+   // Attempt to get the real name of the file, if the user asked
+   if (!RealPath)
+     return std::error_code();
++#if defined(__wasm__)
++  return std::error_code();
++#else
+   RealPath->clear();
+ #if defined(F_GETPATH)
+   // When F_GETPATH is availble, it is the quickest way to get
+@@ -1228,6 +1402,7 @@
+ #endif
+ #endif
+   return std::error_code();
++#endif
+ }
+ 
+ Expected<file_t> openNativeFileForRead(const Twine &Name, OpenFlags Flags,
+@@ -1248,6 +1423,11 @@
+ Expected<size_t> readNativeFile(file_t FD, MutableArrayRef<char> Buf) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  (void)Buf;
++  return errorCodeToError(std::make_error_code(std::errc::operation_not_supported));
++#else
+ #if defined(__APPLE__)
+   size_t Size = std::min<size_t>(Buf.size(), INT32_MAX);
  #else
-   assert(FD >= 0 && "File not yet open!");
-   struct stat statbuf;
-
+@@ -1266,12 +1446,19 @@
+     return errorCodeToError(make_error_code(errc::is_a_directory));
+ #endif
+   return NumRead;
++#endif
+ }
+ 
+ Expected<size_t> readNativeFileSlice(file_t FD, MutableArrayRef<char> Buf,
+                                      uint64_t Offset) {
+   sandbox::violationIfEnabled();
+ 
++#if defined(__wasm__)
++  (void)FD;
++  (void)Buf;
++  (void)Offset;
++  return errorCodeToError(std::make_error_code(std::errc::operation_not_supported));
++#else
+ #if defined(__APPLE__)
+   size_t Size = std::min<size_t>(Buf.size(), INT32_MAX);
+ #else
+@@ -1288,10 +1475,17 @@
+   if (NumRead == -1)
+     return errorCodeToError(errnoAsErrorCode());
+   return NumRead;
++#endif
+ }
+ 
+ std::error_code tryLockFile(int FD, std::chrono::milliseconds Timeout,
+                             LockKind Kind) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Timeout;
++  (void)Kind;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   auto Start = std::chrono::steady_clock::now();
+   auto End = Start + Timeout;
+   do {
+@@ -1318,9 +1512,15 @@
+     usleep(1000);
+   } while (std::chrono::steady_clock::now() < End);
+   return make_error_code(errc::no_lock_available);
++#endif
+ }
+ 
+ std::error_code lockFile(int FD, LockKind Kind) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Kind;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct flock Lock;
+   memset(&Lock, 0, sizeof(Lock));
+   switch (Kind) {
+@@ -1337,9 +1537,14 @@
+   if (::fcntl(FD, F_SETLKW, &Lock) != -1)
+     return std::error_code();
+   return errnoAsErrorCode();
++#endif
+ }
+ 
+ std::error_code unlockFile(int FD) {
++#if defined(__wasm__)
++  (void)FD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   struct flock Lock;
+   Lock.l_type = F_UNLCK;
+   Lock.l_whence = SEEK_SET;
+@@ -1348,6 +1553,7 @@
+   if (::fcntl(FD, F_SETLK, &Lock) != -1)
+     return std::error_code();
+   return errnoAsErrorCode();
++#endif
+ }
+ 
+ std::error_code closeFile(file_t &F) {
+@@ -1406,6 +1612,10 @@
+   if (path.isTriviallyEmpty())
+     return std::error_code();
+ 
++#if defined(__wasm__)
++  (void)expand_tilde;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   if (expand_tilde) {
+     SmallString<128> Storage;
+     path.toVector(Storage);
+@@ -1420,14 +1630,22 @@
+     return errnoAsErrorCode();
+   dest.append(Buffer, Buffer + strlen(Buffer));
+   return std::error_code();
++#endif
+ }
+ 
+ std::error_code changeFileOwnership(int FD, uint32_t Owner, uint32_t Group) {
++#if defined(__wasm__)
++  (void)FD;
++  (void)Owner;
++  (void)Group;
++  return std::make_error_code(std::errc::operation_not_supported);
++#else
+   auto FChown = [&]() { return ::fchown(FD, Owner, Group); };
+   // Retry if fchown call fails due to interruption.
+   if ((sys::RetryAfterSignal(-1, FChown)) < 0)
+     return errnoAsErrorCode();
+   return std::error_code();
++#endif
+ }
+ 
+ } // end namespace fs
+@@ -1435,6 +1653,10 @@
+ namespace path {
+ 
+ bool home_directory(SmallVectorImpl<char> &result) {
++#if defined(__wasm__)
++  (void)result;
++  return false;
++#else
+   std::unique_ptr<char[]> Buf;
+   char *RequestedDir = getenv("HOME");
+   if (!RequestedDir) {
+@@ -1454,6 +1676,7 @@
+   result.clear();
+   result.append(RequestedDir, RequestedDir + strlen(RequestedDir));
+   return true;
++#endif
+ }
+ 
+ static bool getDarwinConfDir(bool TempDir, SmallVectorImpl<char> &Result) {
+@@ -1481,6 +1704,10 @@
+ }
+ 
+ bool user_config_directory(SmallVectorImpl<char> &result) {
++#if defined(__wasm__)
++  (void)result;
++  return false;
++#else
+ #ifdef __APPLE__
+   // Mac: ~/Library/Preferences/
+   if (home_directory(result)) {
+@@ -1502,9 +1729,14 @@
+   }
+   append(result, ".config");
+   return true;
++#endif
+ }
+ 
+ bool cache_directory(SmallVectorImpl<char> &result) {
++#if defined(__wasm__)
++  (void)result;
++  return false;
++#else
+ #ifdef __APPLE__
+   if (getDarwinConfDir(false /*tempDir*/, result)) {
+     return true;
+@@ -1523,9 +1755,13 @@
+   }
+   append(result, ".cache");
+   return true;
++#endif
+ }
+ 
+ static const char *getEnvTempDir() {
++#if defined(__wasm__)
++  return nullptr;
++#else
+   // Check whether the temporary directory is specified by an environment
+   // variable.
+   const char *EnvironmentVariables[] = {"TMPDIR", "TMP", "TEMP", "TEMPDIR"};
+@@ -1535,6 +1771,7 @@
+   }
+ 
+   return nullptr;
++#endif
+ }
+ 
+ static const char *getDefaultTempDir(bool ErasedOnReboot) {
 --- a/llvm/lib/Support/Unix/Program.inc
 +++ b/llvm/lib/Support/Unix/Program.inc
-@@ -167,6 +167,11 @@
+@@ -69,10 +69,14 @@
+ 
+   SmallVector<StringRef, 16> EnvironmentPaths;
+   if (Paths.empty())
++#if defined(__wasm__)
++    return errc::no_such_file_or_directory;
++#else
+     if (const char *PathEnv = std::getenv("PATH")) {
+       SplitString(PathEnv, EnvironmentPaths, ":");
+       Paths = EnvironmentPaths;
+     }
++#endif
+ 
+   for (auto Path : Paths) {
+     if (Path.empty())
+@@ -167,6 +171,11 @@
                      ArrayRef<std::optional<StringRef>> Redirects,
                      unsigned MemoryLimit, std::string *ErrMsg,
                      BitVector *AffinityMask, bool DetachProcess) {
@@ -220,7 +954,7 @@
    assert(!AffinityMask && "Starting a process with an affinity mask is "
                            "currently not supported on Unix!");
  
-@@ -329,6 +334,7 @@
+@@ -329,6 +338,7 @@
    PI.Process = child;
  
    return true;
@@ -228,7 +962,7 @@
  }
  
  namespace llvm {
-@@ -382,6 +388,14 @@
+@@ -382,6 +392,14 @@
                              std::string *ErrMsg,
                              std::optional<ProcessStatistics> *ProcStat,
                              bool Polling) {
@@ -243,7 +977,7 @@
    struct sigaction Act, Old;
    assert(PI.Pid && "invalid pid to wait on, process not started?");
  
-@@ -499,6 +513,7 @@
+@@ -499,6 +517,7 @@
      WaitResult.ReturnCode = -2;
    }
    return WaitResult;
@@ -251,3 +985,167 @@
  }
  
  std::error_code llvm::sys::ChangeStdinMode(fs::OpenFlags Flags) {
+@@ -547,6 +566,11 @@
+ 
+ bool llvm::sys::commandLineFitsWithinSystemLimits(StringRef Program,
+                                                   ArrayRef<StringRef> Args) {
++#if defined(__wasm__)
++  (void)Program;
++  (void)Args;
++  return true;
++#else
+   static long ArgMax = sysconf(_SC_ARG_MAX);
+   // POSIX requires that _POSIX_ARG_MAX is 4096, which is the lowest possible
+   // value for ARG_MAX on a POSIX compliant system.
+@@ -584,4 +608,5 @@
+   }
+ 
+   return true;
++#endif
+ }
+--- a/llvm/lib/Support/Unix/Signals.inc
++++ b/llvm/lib/Support/Unix/Signals.inc
+@@ -154,6 +154,10 @@
+   }
+ 
+   static void removeFile(char *path) {
++#if defined(__wasm__)
++    (void)path;
++    return;
++#endif
+     // Get the status so we can determine if it's a file or directory. If we
+     // can't stat the file, ignore it.
+     struct stat buf;
+@@ -293,6 +297,9 @@
+ #endif
+ 
+ static void RegisterHandlers() { // Not signal-safe.
++#if defined(__wasm__)
++  return;
++#else
+   // The mutex prevents other threads from registering handlers while we're
+   // doing it. We also have to protect the handlers and their count because
+   // a signal handler could fire while we're registering handlers.
+@@ -341,15 +348,20 @@
+     registerHandler(SIGPIPE, SignalKind::IsKill);
+   for (auto S : InfoSigs)
+     registerHandler(S, SignalKind::IsInfo);
++#endif
+ }
+ 
+ void sys::unregisterHandlers() {
++#if defined(__wasm__)
++  return;
++#else
+   // Restore all of the signal handlers to how they were before we showed up.
+   for (unsigned i = 0, e = NumRegisteredSignals.load(); i != e; ++i) {
+     sigaction(RegisteredSignalInfo[i].SigNo, &RegisteredSignalInfo[i].SA,
+               nullptr);
+     --NumRegisteredSignals;
+   }
++#endif
+ }
+ 
+ /// Process the FilesToRemove list.
+--- a/llvm/lib/Support/raw_socket_stream.cpp
++++ b/llvm/lib/Support/raw_socket_stream.cpp
+@@ -70,6 +70,12 @@
+ }
+ 
+ static Expected<int> getSocketFD(StringRef SocketPath) {
++#if defined(__wasm__)
++  (void)SocketPath;
++  return llvm::make_error<StringError>(
++      std::make_error_code(std::errc::operation_not_supported),
++      "unix sockets are unavailable on wasm");
++#else
+ #ifdef _WIN32
+   SOCKET Socket = socket(AF_UNIX, SOCK_STREAM, 0);
+   if (Socket == INVALID_SOCKET) {
+@@ -100,6 +106,7 @@
+ #else
+   return Socket;
+ #endif // _WIN32
++#endif // __wasm__
+ }
+ 
+ ListeningSocket::ListeningSocket(int SocketFD, StringRef SocketPath,
+@@ -118,6 +125,13 @@
+ 
+ Expected<ListeningSocket> ListeningSocket::createUnix(StringRef SocketPath,
+                                                       int MaxBacklog) {
++#if defined(__wasm__)
++  (void)SocketPath;
++  (void)MaxBacklog;
++  return llvm::make_error<StringError>(
++      std::make_error_code(std::errc::operation_not_supported),
++      "unix sockets are unavailable on wasm");
++#else
+ 
+   // Handle instances where the target socket address already exists and
+   // differentiate between a preexisting file with and without a bound socket
+@@ -193,6 +207,7 @@
+ #else
+   return ListeningSocket{Socket, SocketPath, PipeFD};
+ #endif // _WIN32
++#endif // __wasm__
+ }
+ 
+ // If a file descriptor being monitored by ::poll is closed by another thread,
+@@ -208,6 +223,12 @@
+ manageTimeout(const std::chrono::milliseconds &Timeout,
+               const std::function<int()> &getActiveFD,
+               const std::optional<int> &CancelFD = std::nullopt) {
++#if defined(__wasm__)
++  (void)Timeout;
++  (void)getActiveFD;
++  (void)CancelFD;
++  return std::make_error_code(std::errc::operation_not_supported);
++#endif
+   struct pollfd FD[2];
+   FD[0].events = POLLIN;
+ #ifdef _WIN32
+@@ -270,6 +291,12 @@
+ 
+ Expected<std::unique_ptr<raw_socket_stream>>
+ ListeningSocket::accept(const std::chrono::milliseconds &Timeout) {
++#if defined(__wasm__)
++  (void)Timeout;
++  return llvm::make_error<StringError>(
++      std::make_error_code(std::errc::operation_not_supported),
++      "unix sockets are unavailable on wasm");
++#else
+   auto getActiveFD = [this]() -> int { return FD; };
+   std::error_code TimeoutErr = manageTimeout(Timeout, getActiveFD, PipeFD[0]);
+   if (TimeoutErr)
+@@ -287,6 +314,7 @@
+     return llvm::make_error<StringError>(getLastSocketErrorCode(),
+                                          "Socket accept failed");
+   return std::make_unique<raw_socket_stream>(AcceptFD);
++#endif
+ }
+ 
+ void ListeningSocket::shutdown() {
+@@ -295,6 +323,11 @@
+   if (ObservedFD == -1)
+     return;
+ 
++#if defined(__wasm__)
++  FD.store(-1);
++  return;
++#endif
++
+   // If FD equals ObservedFD set FD to -1; If FD doesn't equal ObservedFD then
+   // another thread is responsible for shutdown so return
+   if (!FD.compare_exchange_strong(ObservedFD, -1))
+@@ -314,6 +347,10 @@
+ ListeningSocket::~ListeningSocket() {
+   shutdown();
+ 
++#if defined(__wasm__)
++  return;
++#endif
++
+   // Close the pipe's FDs in the destructor instead of within
+   // ListeningSocket::shutdown to avoid unnecessary synchronization issues that
+   // would occur as PipeFD's values would have to be changed to -1

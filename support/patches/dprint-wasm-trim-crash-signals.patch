@@ -31,7 +31,7 @@
  #endif // !_WIN32
  
  bool CrashRecoveryContext::RunSafely(function_ref<void()> Fn) {
-@@ -417,11 +425,13 @@
+@@ -417,10 +425,12 @@
      CrashRecoveryContextImpl *CRCI = new CrashRecoveryContextImpl(this);
      Impl = CRCI;
  
@@ -53,34 +53,3 @@
  #else
    llvm::sys::unregisterHandlers();
    raise(RetCode - 128);
---- a/llvm/lib/Support/Unix/Signals.inc
-+++ b/llvm/lib/Support/Unix/Signals.inc
-@@ -297,6 +297,9 @@
- #endif
- 
- static void RegisterHandlers() { // Not signal-safe.
-+#if defined(__wasm__)
-+  return;
-+#else
-   // The mutex prevents other threads from registering handlers while we're
-   // doing it. We also have to protect the handlers and their count because
-   // a signal handler could fire while we're registering handlers.
-@@ -345,10 +348,14 @@
-     registerHandler(SIGPIPE, SignalKind::IsKill);
-   for (auto S : InfoSigs)
-     registerHandler(S, SignalKind::IsInfo);
-+#endif
- }
- 
- void sys::unregisterHandlers() {
-+#if defined(__wasm__)
-+  return;
-+#else
-   // Restore all of the signal handlers to how they were before we showed up.
-   for (unsigned i = 0, e = NumRegisteredSignals.load(); i != e; ++i) {
-     sigaction(RegisteredSignalInfo[i].SigNo, &RegisteredSignalInfo[i].SA,
-               nullptr);
-     --NumRegisteredSignals;
-   }
-+#endif
- }

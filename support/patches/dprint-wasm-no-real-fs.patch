@@ -119,77 +119,25 @@
    uint64_t Pos = tell();
    seek(Offset);
    write(Ptr, Size);
-+@@ -970,6 +991,13 @@
-+ ssize_t raw_fd_stream::read(char *Ptr, size_t Size) {
-+   assert(get_fd() >= 0 && "File already closed.");
-++#if defined(__wasm__)
-++  (void)Ptr;
-++  (void)Size;
-++  error_detected(std::make_error_code(std::errc::operation_not_supported));
-++  return -1;
-++#endif
-+   ssize_t Ret = ::read(get_fd(), (void *)Ptr, Size);
-+   if (Ret >= 0)
-+     inc_pos(Ret);
- --- a/llvm/lib/Support/Unix/Process.inc
-+++ b/llvm/lib/Support/Unix/Process.inc
-@@ -218,6 +218,9 @@
- } // namespace
- 
- std::error_code Process::FixupStandardFileDescriptors() {
-+#if defined(__wasm__)
-+  return std::error_code();
-+#endif
-   int NullFD = -1;
-   FDCloser FDC(NullFD);
-   const int StandardFDs[] = {STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO};
-@@ -252,6 +255,10 @@
- }
- 
- std::error_code Process::SafelyCloseFileDescriptor(int FD) {
-+#if defined(__wasm__)
-+  (void)FD;
-+  return std::error_code();
-+#endif
-   // Create a signal set filled with *all* signals.
-   sigset_t FullSet, SavedSet;
-   if (sigfillset(&FullSet) < 0 || sigfillset(&SavedSet) < 0)
-@@ -299,7 +306,10 @@
- }
- 
- bool Process::FileDescriptorIsDisplayed(int fd) {
--#if HAVE_ISATTY
-+#if defined(__wasm__)
-+  (void)fd;
-+  return false;
-+#elif HAVE_ISATTY
-   return isatty(fd);
+@@ -840,6 +871,8 @@
+   // The buffer size on z/OS is defined with macro BUFSIZ, which can be
+   // retrieved by invoking function raw_ostream::preferred_buffer_size().
+   return raw_ostream::preferred_buffer_size();
++#elif defined(__wasm__)
++  return raw_ostream::preferred_buffer_size();
  #else
-   // If we don't have isatty, just return false.
-+@@ -398,6 +406,9 @@
-+ #if !HAVE_DECL_ARC4RANDOM
-+ static unsigned GetRandomNumberSeed() {
-++#if defined(__wasm__)
-++  return 0;
-++#else
-+   // Attempt to get the initial seed from /dev/urandom, if possible.
-+   int urandomFD = open("/dev/urandom", O_RDONLY);
-+@@ -425,6 +434,7 @@
-+   const auto Now = std::chrono::high_resolution_clock::now();
-+   return hash_combine(Now.time_since_epoch().count(), ::getpid());
-++#endif
-+ }
-+ #endif
- --- a/llvm/lib/Support/Unix/Path.inc
-+++ b/llvm/lib/Support/Unix/Path.inc
-@@ -1435,6 +1435,10 @@
- namespace path {
+   assert(FD >= 0 && "File not yet open!");
+   struct stat statbuf;
+@@ -939,6 +972,12 @@
  
- bool home_directory(SmallVectorImpl<char> &result) {
+ ssize_t raw_fd_stream::read(char *Ptr, size_t Size) {
+   assert(get_fd() >= 0 && "File already closed.");
 +#if defined(__wasm__)
-+  (void)result;
-+  return false;
++  (void)Ptr;
++  (void)Size;
++  error_detected(std::make_error_code(std::errc::operation_not_supported));
++  return -1;
 +#endif
-   std::unique_ptr<char[]> Buf;
-   char *RequestedDir = getenv("HOME");
-   if (!RequestedDir) {
+   ssize_t Ret = ::read(get_fd(), (void *)Ptr, Size);
+   if (Ret >= 0)
+     inc_pos(Ret);

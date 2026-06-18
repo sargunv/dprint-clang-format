@@ -20,8 +20,14 @@ pixi run ninja -C build/llvm-wasm clangFormat
 pixi run smoke-dprint-plugin
 ```
 
-`fetch-llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies
-`support/patches/dprint-wasm-no-real-fs.patch`.
+`fetch-llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies the
+patches in `support/patches/` (via `scripts/apply_llvm_patches.sh`). To verify
+patch reproducibility from a clean extract:
+
+```sh
+rm -rf third_party/llvm-project-22.1.7.src
+pixi run fetch-llvm
+```
 
 `smoke-dprint-plugin` builds `build/dprint-clang-format-plugin.wasm`, writes a
 short import summary to `reports/dprint-plugin-imports.md`, exercises the plugin
@@ -47,8 +53,22 @@ int main() { return 1; }
   archive set (10 LLVM/clang static libraries, two passes)
 - `scripts/configure_llvm_wasm.sh` — cross-build LLVM/Clang for
   `wasm32-unknown-unknown`
-- `support/patches/dprint-wasm-no-real-fs.patch` — in-memory VFS and wasm I/O trims
+- `support/patches/` — LLVM wasm freestanding guards (in-memory VFS, no real FS,
+  signal/process/env trims)
 - `support/wasm-sysroot/` and `support/libcxx-wasm/` — freestanding headers
+
+## Gaps and future polish
+
+Spike ABI is complete (`smoke-dprint-plugin` passes); production polish is not.
+
+- [ ] **CI** — no automated fetch/build/smoke pipeline yet
+- [ ] **Plugin metadata** — placeholder name, empty `helpUrl` / `configSchemaUrl`, POC license text
+- [ ] **Config depth** — nested clang-format options (e.g. `IncludeCategories`, object arrays) are rejected; only flat PascalCase keys plus dprint globals
+- [ ] **Style discovery** — reject or document unsupported `BasedOnStyle: file` / parent-config inheritance paths
+- [ ] **`check_config_updates`** — always returns empty ok; no file-watch integration
+- [ ] **Tests** — smoke covers full-file format only; no `format_range`, ObjC, invalid-range, or config-diagnostic cases
+- [ ] **Wasm size / link audit** — optional import/symbol reports beyond the smoke import summary
+- [ ] **Sysroot trim** — freestanding headers could be narrowed further if build stays stable
 
 ## Plugin surface
 

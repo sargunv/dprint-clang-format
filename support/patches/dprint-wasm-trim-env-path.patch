@@ -1,6 +1,7 @@
 --- a/llvm/lib/Support/Jobserver.cpp
 +++ b/llvm/lib/Support/Jobserver.cpp
 @@ -198,6 +198,9 @@
+ /// initialize a `JobserverClientImpl`. If successful, the global instance is
  /// stored in `GJobserver`. Subsequent calls will return the existing instance.
  JobserverClient *JobserverClient::getInstance() {
 +#if defined(__wasm__)
@@ -16,6 +17,7 @@
 +#endif
  }
  
+ /// For testing purposes only. This function resets the singleton instance by
 --- a/llvm/lib/Support/Signals.cpp
 +++ b/llvm/lib/Support/Signals.cpp
 @@ -244,6 +244,10 @@
@@ -29,13 +31,14 @@
    ErrorOr<std::string> LLVMSymbolizerPathOrErr = std::error_code();
    if (const char *Path = getenv(LLVMSymbolizerPathEnv)) {
      LLVMSymbolizerPathOrErr = sys::findProgramByName(Path);
-@@ -256,11 +260,21 @@
+@@ -256,12 +260,20 @@
    if (!LLVMSymbolizerPathOrErr)
      LLVMSymbolizerPathOrErr = sys::findProgramByName("llvm-symbolizer");
    return LLVMSymbolizerPathOrErr;
 +#endif
  }
  
+ /// Helper that launches llvm-symbolizer and symbolizes a backtrace.
  LLVM_ATTRIBUTE_USED
  static bool printSymbolizedStackTrace(StringRef Argv0, void **StackTrace,
                                        int Depth, llvm::raw_ostream &OS) {
@@ -49,15 +52,15 @@
    if (DisableSymbolicationFlag || getenv(DisableSymbolizationEnv))
      return false;
  
-@@ -298,6 +312,7 @@
+@@ -294,6 +306,7 @@
         << ' ' << (*SymbolizedAddressesOpt)[FrameNo].second << '\n';
    }
    return true;
 +#endif
  }
  
- LLVM_ATTRIBUTE_USED
-@@ -338,6 +353,13 @@
+ #if LLVM_ENABLE_DEBUGLOC_TRACKING_ORIGIN
+@@ -338,6 +351,13 @@
  LLVM_ATTRIBUTE_USED
  static bool printMarkupStackTrace(StringRef Argv0, void **StackTrace, int Depth,
                                    raw_ostream &OS) {
@@ -71,16 +74,71 @@
    const char *Env = getenv(EnableSymbolizerMarkupEnv);
    if (!Env || !*Env)
      return false;
-@@ -350,6 +372,7 @@
+@@ -350,6 +370,7 @@
    for (int I = 0; I < Depth; I++)
      OS << format("{{{bt:%d:%#016x}}}\n", I, StackTrace[I]);
    return true;
 +#endif
  }
  
+ // Include the platform-specific parts of this class.
 --- a/llvm/lib/Support/Unix/Process.inc
 +++ b/llvm/lib/Support/Unix/Process.inc
-@@ -191,11 +191,17 @@
+@@ -48,7 +48,9 @@
+ 
+ static std::pair<std::chrono::microseconds, std::chrono::microseconds>
+ getRUsageTimes() {
+-#if defined(HAVE_GETRUSAGE)
++#if defined(__wasm__)
++  return {std::chrono::microseconds::zero(), std::chrono::microseconds::zero()};
++#elif defined(HAVE_GETRUSAGE)
+   struct rusage RU;
+   ::getrusage(RUSAGE_SELF, &RU);
+   return {toDuration(RU.ru_utime), toDuration(RU.ru_stime)};
+@@ -63,12 +65,19 @@
+ Process::Pid Process::getProcessId() {
+   static_assert(sizeof(Pid) >= sizeof(pid_t),
+                 "Process::Pid should be big enough to store pid_t");
++#if defined(__wasm__)
++  return Pid(1);
++#else
+   return Pid(::getpid());
++#endif
+ }
+ 
+ // On Cygwin, getpagesize() returns 64k(AllocationGranularity) and
+ // offset in mmap(3) should be aligned to the AllocationGranularity.
+ Expected<unsigned> Process::getPageSize() {
++#if defined(__wasm__)
++  return 65536u;
++#else
+ #if defined(HAVE_GETAUXVAL)
+   static const int page_size = ::getauxval(AT_PAGESZ);
+ #elif defined(HAVE_GETPAGESIZE)
+@@ -84,6 +93,7 @@
+   assert(page_size > 0 && "Page size cannot be 0");
+   assert((page_size % 1024) == 0 && "Page size must be aligned by 1024");
+   return static_cast<unsigned>(page_size);
++#endif
+ }
+ 
+ size_t Process::GetMallocUsage() {
+@@ -136,6 +146,10 @@
+ // their operation. To prevent the disk from filling up, this function
+ // does what's necessary to prevent their generation.
+ void Process::PreventCoreFiles() {
++#if defined(__wasm__)
++  coreFilesPrevented = true;
++  return;
++#else
+   struct rlimit rlim;
+   getrlimit(RLIMIT_CORE, &rlim);
+ #ifdef __linux__
+@@ -188,14 +202,20 @@
+ #endif
+ 
+   coreFilesPrevented = true;
++#endif
  }
  
  std::optional<std::string> Process::GetEnv(StringRef Name) {
@@ -97,7 +155,40 @@
  }
  
  namespace {
-@@ -317,6 +323,10 @@
+@@ -218,6 +238,9 @@
+ } // namespace
+ 
+ std::error_code Process::FixupStandardFileDescriptors() {
++#if defined(__wasm__)
++  return std::error_code();
++#endif
+   int NullFD = -1;
+   FDCloser FDC(NullFD);
+   const int StandardFDs[] = {STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO};
+@@ -252,6 +275,10 @@
+ }
+ 
+ std::error_code Process::SafelyCloseFileDescriptor(int FD) {
++#if defined(__wasm__)
++  (void)FD;
++  return std::error_code();
++#endif
+   // Create a signal set filled with *all* signals.
+   sigset_t FullSet, SavedSet;
+   if (sigfillset(&FullSet) < 0 || sigfillset(&SavedSet) < 0)
+@@ -299,7 +326,10 @@
+ }
+ 
+ bool Process::FileDescriptorIsDisplayed(int fd) {
+-#if HAVE_ISATTY
++#if defined(__wasm__)
++  (void)fd;
++  return false;
++#elif HAVE_ISATTY
+   return isatty(fd);
+ #else
+   // If we don't have isatty, just return false.
+@@ -308,6 +338,10 @@
  }
  
  static unsigned getColumns(int FileID) {
@@ -108,11 +199,15 @@
    // If COLUMNS is defined in the environment, wrap to that many columns.
    // This matches GCC.
    if (const char *ColumnsStr = std::getenv("COLUMNS")) {
-@@ -338,10 +348,14 @@
+@@ -327,6 +361,7 @@
  #endif
  
    return Columns;
 +#endif
+ }
+ 
+ unsigned Process::StandardOutColumns() {
+@@ -344,6 +379,9 @@
  }
  
  static bool terminalHasColors() {
@@ -122,181 +217,29 @@
    // Check if the current terminal is one of terminals that are known to support
    // ANSI color escape codes.
    if (const char *TermStr = std::getenv("TERM")) {
-@@ -359,6 +373,7 @@
+@@ -360,6 +398,7 @@
    }
  
    return false;
 +#endif
  }
  
---- a/llvm/lib/Support/Unix/Program.inc
-+++ b/llvm/lib/Support/Unix/Program.inc
-@@ -69,10 +69,14 @@
+ bool Process::FileDescriptorHasColors(int fd) {
+@@ -397,6 +436,9 @@
  
-   SmallVector<StringRef, 16> EnvironmentPaths;
-   if (Paths.empty())
+ #if !HAVE_DECL_ARC4RANDOM
+ static unsigned GetRandomNumberSeed() {
 +#if defined(__wasm__)
-+    return errc::no_such_file_or_directory;
++  return 0;
 +#else
-     if (const char *PathEnv = std::getenv("PATH")) {
-       SplitString(PathEnv, EnvironmentPaths, ":");
-       Paths = EnvironmentPaths;
-     }
-+#endif
+   // Attempt to get the initial seed from /dev/urandom, if possible.
+   int urandomFD = open("/dev/urandom", O_RDONLY);
  
-   for (auto Path : Paths) {
- 
---- a/llvm/lib/Support/Unix/Path.inc
-+++ b/llvm/lib/Support/Unix/Path.inc
-@@ -483,6 +483,11 @@
- }
- 
- std::error_code remove(const Twine &path, bool IgnoreNonExisting) {
-+#if defined(__wasm__)
-+  (void)path;
-+  (void)IgnoreNonExisting;
-+  return std::make_error_code(std::errc::operation_not_supported);
-+#else
-   SmallString<128> path_storage;
-   StringRef p = path.toNullTerminatedStringRef(path_storage);
- 
-@@ -507,6 +512,7 @@
-   }
- 
-   return std::error_code();
+@@ -417,6 +459,7 @@
+   // seed.
+   const auto Now = std::chrono::high_resolution_clock::now();
+   return hash_combine(Now.time_since_epoch().count(), ::getpid());
 +#endif
  }
- 
-@@ -705,6 +711,10 @@
- }
- 
- static void expandTildeExpr(SmallVectorImpl<char> &Path) {
-+#if defined(__wasm__)
-+  (void)Path;
-+  return;
-+#else
-   StringRef PathStr(Path.begin(), Path.size());
-   if (PathStr.empty() || !PathStr.starts_with("~"))
-     return;
-@@ -748,6 +758,7 @@
-   Path.clear();
-   Path.append(Entry->pw_dir, Entry->pw_dir + strlen(Entry->pw_dir));
-   llvm::sys::path::append(Path, Storage);
-+#endif
- }
- 
-@@ -958,10 +969,14 @@
- 
- std::error_code mapped_file_region::sync() const {
- #if defined(__wasm__)
-   return std::error_code();
-+#else
-+  if (int Res = ::msync(Mapping, Size, MS_SYNC))
-+    return std::error_code(Res, std::generic_category());
-+  return std::error_code();
  #endif
--  if (int Res = ::msync(Mapping, Size, MS_SYNC))
--    return std::error_code(Res, std::generic_category());
--  return std::error_code();
- }
- 
- void mapped_file_region::dontNeedImpl() {
-@@ -969,6 +984,9 @@
-   assert(Mode == mapped_file_region::readonly);
-   if (!Mapping)
-     return;
-+#if defined(__wasm__)
-+  return;
-+#else
- #if defined(__MVS__) || defined(_AIX)
-     // If we don't have madvise, or it isn't beneficial, treat this as a no-op.
- #elif defined(POSIX_MADV_DONTNEED)
-@@ -976,6 +994,7 @@
- #else
-   ::madvise(Mapping, Size, MADV_DONTNEED);
- #endif
-+#endif
- }
- 
- void mapped_file_region::willNeedImpl() {
-@@ -983,6 +1002,9 @@
-   assert(Mode == mapped_file_region::readonly);
-   if (!Mapping)
-     return;
-+#if defined(__wasm__)
-+  return;
-+#else
- #if defined(__MVS__) || defined(_AIX)
-   // If we don't have madvise, or it isn't beneficial, treat this as a no-op.
- #elif defined(POSIX_MADV_WILLNEED)
-@@ -990,6 +1012,7 @@
- #else
-   ::madvise(Mapping, Size, MADV_WILLNEED);
- #endif
-+#endif
- }
- 
-@@ -1544,9 +1567,9 @@
- bool home_directory(SmallVectorImpl<char> &result) {
- #if defined(__wasm__)
-   (void)result;
-   return false;
--#endif
-+#else
-   std::unique_ptr<char[]> Buf;
-   char *RequestedDir = getenv("HOME");
-   if (!RequestedDir) {
-@@ -1567,6 +1590,11 @@
-   result.clear();
-   result.append(RequestedDir, RequestedDir + strlen(RequestedDir));
-   return true;
-+#endif
- }
- 
-@@ -1592,6 +1620,10 @@
- }
- 
- bool user_config_directory(SmallVectorImpl<char> &result) {
-+#if defined(__wasm__)
-+  (void)result;
-+  return false;
-+#else
- #ifdef __APPLE__
-   // Mac: ~/Library/Preferences/
-   if (home_directory(result)) {
-@@ -1612,10 +1644,15 @@
-   }
-   append(result, ".config");
-   return true;
-+#endif
- }
- 
- bool cache_directory(SmallVectorImpl<char> &result) {
-+#if defined(__wasm__)
-+  (void)result;
-+  return false;
-+#else
- #ifdef __APPLE__
-   if (getDarwinConfDir(false /*tempDir*/, result)) {
-     return true;
-@@ -1634,10 +1671,15 @@
-   }
-   append(result, ".cache");
-   return true;
-+#endif
- }
- 
- static const char *getEnvTempDir() {
-+#if defined(__wasm__)
-+  return nullptr;
-+#else
-   // Check whether the temporary directory is specified by an environment
-   // variable.
-   const char *EnvironmentVariables[] = {"TMPDIR", "TMP", "TEMP", "TEMPDIR"};
-@@ -1647,6 +1689,7 @@
-   }
- 
-   return nullptr;
-+#endif
- }
  

@@ -1,260 +1,5 @@
---- a/llvm/lib/Support/Unix/Watchdog.inc	2026-06-01 00:23:32
-+++ b/llvm/lib/Support/Unix/Watchdog.inc	2026-06-16 23:57:01
-@@ -19,13 +19,16 @@
- namespace llvm {
- namespace sys {
- Watchdog::Watchdog(unsigned int seconds) {
--#ifdef HAVE_UNISTD_H
-+#if defined(__wasm__)
-+  (void)seconds;
-+#elif defined(HAVE_UNISTD_H)
-   alarm(seconds);
- #endif
- }
- 
- Watchdog::~Watchdog() {
--#ifdef HAVE_UNISTD_H
-+#if defined(__wasm__)
-+#elif defined(HAVE_UNISTD_H)
-   alarm(0);
- #endif
- }
---- a/llvm/lib/Support/LockFileManager.cpp	2026-06-01 00:23:32
-+++ b/llvm/lib/Support/LockFileManager.cpp	2026-06-16 23:57:02
-@@ -96,12 +96,17 @@
-   HostID.append(UUIDRef.begin(), UUIDRef.end());
- 
- #elif LLVM_ON_UNIX
-+#if defined(__wasm__)
-+  StringRef Dummy("wasm");
-+  HostID.append(Dummy.begin(), Dummy.end());
-+#else
-   char HostName[256];
-   HostName[255] = 0;
-   HostName[0] = 0;
-   gethostname(HostName, 255);
-   StringRef HostNameRef(HostName);
-   HostID.append(HostNameRef.begin(), HostNameRef.end());
-+#endif
- 
- #else
-   StringRef Dummy("localhost");
-@@ -112,7 +117,11 @@
- }
- 
- bool LockFileManager::processStillExecuting(StringRef HostID, int PID) {
--#if LLVM_ON_UNIX && !defined(__ANDROID__)
-+#if defined(__wasm__)
-+  (void)HostID;
-+  (void)PID;
-+  return false;
-+#elif LLVM_ON_UNIX && !defined(__ANDROID__)
-   SmallString<256> StoredHostID;
-   if (getHostID(StoredHostID))
-     return true; // Conservatively assume it's executing on error.
---- a/llvm/lib/Support/Unix/Process.inc	2026-06-17 00:07:05
-+++ b/llvm/lib/Support/Unix/Process.inc	2026-06-16 23:57:55
-@@ -48,7 +48,9 @@
- 
- static std::pair<std::chrono::microseconds, std::chrono::microseconds>
- getRUsageTimes() {
--#if defined(HAVE_GETRUSAGE)
-+#if defined(__wasm__)
-+  return {std::chrono::microseconds::zero(), std::chrono::microseconds::zero()};
-+#elif defined(HAVE_GETRUSAGE)
-   struct rusage RU;
-   ::getrusage(RUSAGE_SELF, &RU);
-   return {toDuration(RU.ru_utime), toDuration(RU.ru_stime)};
-@@ -63,12 +65,19 @@
- Process::Pid Process::getProcessId() {
-   static_assert(sizeof(Pid) >= sizeof(pid_t),
-                 "Process::Pid should be big enough to store pid_t");
-+#if defined(__wasm__)
-+  return Pid(1);
-+#else
-   return Pid(::getpid());
-+#endif
- }
- 
- // On Cygwin, getpagesize() returns 64k(AllocationGranularity) and
- // offset in mmap(3) should be aligned to the AllocationGranularity.
- Expected<unsigned> Process::getPageSize() {
-+#if defined(__wasm__)
-+  return 65536u;
-+#else
- #if defined(HAVE_GETAUXVAL)
-   static const int page_size = ::getauxval(AT_PAGESZ);
- #elif defined(HAVE_GETPAGESIZE)
-@@ -84,6 +93,7 @@
-   assert(page_size > 0 && "Page size cannot be 0");
-   assert((page_size % 1024) == 0 && "Page size must be aligned by 1024");
-   return static_cast<unsigned>(page_size);
-+#endif
- }
- 
- size_t Process::GetMallocUsage() {
-@@ -136,6 +146,10 @@
- // their operation. To prevent the disk from filling up, this function
- // does what's necessary to prevent their generation.
- void Process::PreventCoreFiles() {
-+#if defined(__wasm__)
-+  coreFilesPrevented = true;
-+  return;
-+#else
-   struct rlimit rlim;
-   getrlimit(RLIMIT_CORE, &rlim);
- #ifdef __linux__--- a/llvm/lib/Support/Unix/Memory.inc	2026-06-17 00:07:06
-+++ b/llvm/lib/Support/Unix/Memory.inc	2026-06-16 23:57:56
-@@ -176,6 +176,11 @@
- 
- std::error_code Memory::protectMappedMemory(const MemoryBlock &M,
-                                             unsigned Flags) {
-+#if defined(__wasm__)
-+  (void)M;
-+  (void)Flags;
-+  return std::error_code();
-+#else
-   static const Align PageSize = Align(Process::getPageSizeEstimate());
-   if (M.Address == nullptr || M.AllocatedSize == 0)
-     return std::error_code();
-@@ -215,6 +220,7 @@
-     Memory::InvalidateInstructionCache(M.Address, M.AllocatedSize);
- 
-   return std::error_code();
-+#endif
- }
- 
- /// InvalidateInstructionCache - Before the JIT can run a block of code
---- a/llvm/lib/TargetParser/Unix/Host.inc	2026-06-01 00:23:32
-+++ b/llvm/lib/TargetParser/Unix/Host.inc	2026-06-16 23:57:58
-@@ -28,12 +28,16 @@
- using namespace llvm;
- 
- static std::string getOSVersion() {
-+#if defined(__wasm__)
-+  return "";
-+#else
-   struct utsname info;
- 
-   if (uname(&info))
-     return "";
- 
-   return info.release;
-+#endif
- }
- 
- static std::string updateTripleOSVersion(std::string TargetTripleString) {
-@@ -57,6 +61,9 @@
-   if (Triple(LLVM_HOST_TRIPLE).getOS() == Triple::AIX) {
-     Triple TT{TargetTripleString};
-     if (TT.getOS() == Triple::AIX && !TT.getOSMajorVersion()) {
-+#if defined(__wasm__)
-+      (void)TT;
-+#else
-       struct utsname name;
-       if (uname(&name) != -1) {
-         std::string release = name.release;
-@@ -87,6 +94,7 @@
-         TT.setOSName(NewOSName);
-         return TT.str();
-       }
-+#endif
-     }
-   }
-   return TargetTripleString;
---- a/llvm/lib/Support/ProgramStack.cpp	2026-06-01 00:23:32
-+++ b/llvm/lib/Support/ProgramStack.cpp	2026-06-16 23:57:58
-@@ -42,7 +42,9 @@
- }
- 
- unsigned llvm::getDefaultStackSize() {
--#ifdef LLVM_ON_UNIX
-+#if defined(__wasm__)
-+  return 8 << 20;
-+#elif defined(LLVM_ON_UNIX)
-   rlimit RL;
-   getrlimit(RLIMIT_STACK, &RL);
-   return RL.rlim_cur;
---- a/llvm/lib/Support/Unix/Program.inc	2026-06-01 00:23:32
-+++ b/llvm/lib/Support/Unix/Program.inc	2026-06-16 23:58:22
-@@ -69,10 +69,14 @@
- 
-   SmallVector<StringRef, 16> EnvironmentPaths;
-   if (Paths.empty())
-+#if defined(__wasm__)
-+    return errc::no_such_file_or_directory;
-+#else
-     if (const char *PathEnv = std::getenv("PATH")) {
-       SplitString(PathEnv, EnvironmentPaths, ":");
-       Paths = EnvironmentPaths;
-     }
-+#endif
- 
-   for (auto Path : Paths) {
-     if (Path.empty())
-@@ -167,6 +171,11 @@
-                     ArrayRef<std::optional<StringRef>> Redirects,
-                     unsigned MemoryLimit, std::string *ErrMsg,
-                     BitVector *AffinityMask, bool DetachProcess) {
-+#if defined(__wasm__)
-+  if (ErrMsg)
-+    MakeErrMsg(ErrMsg, "process execution is unavailable on wasm");
-+  return false;
-+#else
-   assert(!AffinityMask && "Starting a process with an affinity mask is "
-                           "currently not supported on Unix!");
- 
-@@ -329,6 +338,7 @@
-   PI.Process = child;
- 
-   return true;
-+#endif
- }
- 
- namespace llvm {
-@@ -382,6 +392,14 @@
-                             std::string *ErrMsg,
-                             std::optional<ProcessStatistics> *ProcStat,
-                             bool Polling) {
-+#if defined(__wasm__)
-+  (void)SecondsToWait;
-+  (void)ProcStat;
-+  (void)Polling;
-+  if (ErrMsg)
-+    MakeErrMsg(ErrMsg, "process wait is unavailable on wasm");
-+  return ProcessInfo();
-+#else
-   struct sigaction Act, Old;
-   assert(PI.Pid && "invalid pid to wait on, process not started?");
- 
-@@ -499,6 +517,7 @@
-     WaitResult.ReturnCode = -2;
-   }
-   return WaitResult;
-+#endif
- }
- 
- std::error_code llvm::sys::ChangeStdinMode(fs::OpenFlags Flags) {
-@@ -547,6 +566,11 @@
- 
- bool llvm::sys::commandLineFitsWithinSystemLimits(StringRef Program,
-                                                   ArrayRef<StringRef> Args) {
-+#if defined(__wasm__)
-+  (void)Program;
-+  (void)Args;
-+  return true;
-+#else
-   static long ArgMax = sysconf(_SC_ARG_MAX);
-   // POSIX requires that _POSIX_ARG_MAX is 4096, which is the lowest possible
-   // value for ARG_MAX on a POSIX compliant system.
-@@ -584,4 +608,5 @@
-   }
- 
-   return true;
-+#endif
- }
---- a/llvm/lib/Support/Chrono.cpp	2026-06-01 00:23:32
-+++ b/llvm/lib/Support/Chrono.cpp	2026-06-16 23:58:07
+--- a/llvm/lib/Support/Chrono.cpp
++++ b/llvm/lib/Support/Chrono.cpp
 @@ -27,12 +27,14 @@
    struct tm Storage;
    std::time_t OurTime = toTimeT(TP);
@@ -327,3 +72,107 @@
  }
  
  void format_provider<UtcTime<std::chrono::seconds>>::format(
+--- a/llvm/lib/Support/LockFileManager.cpp
++++ b/llvm/lib/Support/LockFileManager.cpp
+@@ -96,12 +96,17 @@
+   HostID.append(UUIDRef.begin(), UUIDRef.end());
+ 
+ #elif LLVM_ON_UNIX
++#if defined(__wasm__)
++  StringRef Dummy("wasm");
++  HostID.append(Dummy.begin(), Dummy.end());
++#else
+   char HostName[256];
+   HostName[255] = 0;
+   HostName[0] = 0;
+   gethostname(HostName, 255);
+   StringRef HostNameRef(HostName);
+   HostID.append(HostNameRef.begin(), HostNameRef.end());
++#endif
+ 
+ #else
+   StringRef Dummy("localhost");
+@@ -112,7 +117,11 @@
+ }
+ 
+ bool LockFileManager::processStillExecuting(StringRef HostID, int PID) {
+-#if LLVM_ON_UNIX && !defined(__ANDROID__)
++#if defined(__wasm__)
++  (void)HostID;
++  (void)PID;
++  return false;
++#elif LLVM_ON_UNIX && !defined(__ANDROID__)
+   SmallString<256> StoredHostID;
+   if (getHostID(StoredHostID))
+     return true; // Conservatively assume it's executing on error.
+--- a/llvm/lib/Support/ProgramStack.cpp
++++ b/llvm/lib/Support/ProgramStack.cpp
+@@ -42,7 +42,9 @@
+ }
+ 
+ unsigned llvm::getDefaultStackSize() {
+-#ifdef LLVM_ON_UNIX
++#if defined(__wasm__)
++  return 8 << 20;
++#elif defined(LLVM_ON_UNIX)
+   rlimit RL;
+   getrlimit(RLIMIT_STACK, &RL);
+   return RL.rlim_cur;
+--- a/llvm/lib/Support/Unix/Watchdog.inc
++++ b/llvm/lib/Support/Unix/Watchdog.inc
+@@ -19,13 +19,16 @@
+ namespace llvm {
+ namespace sys {
+ Watchdog::Watchdog(unsigned int seconds) {
+-#ifdef HAVE_UNISTD_H
++#if defined(__wasm__)
++  (void)seconds;
++#elif defined(HAVE_UNISTD_H)
+   alarm(seconds);
+ #endif
+ }
+ 
+ Watchdog::~Watchdog() {
+-#ifdef HAVE_UNISTD_H
++#if defined(__wasm__)
++#elif defined(HAVE_UNISTD_H)
+   alarm(0);
+ #endif
+ }
+--- a/llvm/lib/TargetParser/Unix/Host.inc
++++ b/llvm/lib/TargetParser/Unix/Host.inc
+@@ -28,12 +28,16 @@
+ using namespace llvm;
+ 
+ static std::string getOSVersion() {
++#if defined(__wasm__)
++  return "";
++#else
+   struct utsname info;
+ 
+   if (uname(&info))
+     return "";
+ 
+   return info.release;
++#endif
+ }
+ 
+ static std::string updateTripleOSVersion(std::string TargetTripleString) {
+@@ -57,6 +61,9 @@
+   if (Triple(LLVM_HOST_TRIPLE).getOS() == Triple::AIX) {
+     Triple TT{TargetTripleString};
+     if (TT.getOS() == Triple::AIX && !TT.getOSMajorVersion()) {
++#if defined(__wasm__)
++      (void)TT;
++#else
+       struct utsname name;
+       if (uname(&name) != -1) {
+         std::string release = name.release;
+@@ -87,6 +94,7 @@
+         TT.setOSName(NewOSName);
+         return TT.str();
+       }
++#endif
+     }
+   }
+   return TargetTripleString;

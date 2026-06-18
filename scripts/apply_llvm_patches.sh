@@ -23,13 +23,18 @@ apply_patch() {
     exit 1
   fi
 
-  if rg -q "$marker_pattern" "$marker_file"; then
+  if [[ ! -s "$patch_file" ]]; then
+    echo "skipping empty patch: $(basename "$patch_file")"
+    return 0
+  fi
+
+  if rg -F -q "$marker_pattern" "$marker_file"; then
     echo "already applied: $(basename "$patch_file")"
     return 0
   fi
 
   cd "$source_dir"
-  patch -p1 -N --forward < "$patch_file"
+  patch -p1 -N --forward --batch < "$patch_file"
   cd "$repo_root"
   echo "applied $(basename "$patch_file")"
 }
@@ -56,23 +61,13 @@ apply_patch \
 
 apply_patch \
   "$repo_root/support/patches/dprint-wasm-trim-support-deps.patch" \
-  "$source_dir/llvm/lib/Support/raw_socket_stream.cpp" \
-  'unix sockets are unavailable on wasm'
-
-apply_patch \
-  "$repo_root/support/patches/dprint-wasm-trim-path-posix.patch" \
-  "$source_dir/llvm/lib/Support/Path.cpp" \
-  'void)ToFD;'
-
-apply_patch \
-  "$repo_root/support/patches/dprint-wasm-trim-path-posix-inc.patch" \
-  "$source_dir/llvm/lib/Support/Unix/Path.inc" \
-  'void)Buf;'
+  "$source_dir/llvm/lib/Support/RandomNumberGenerator.cpp" \
+  'memset(Buffer, 0, Size);'
 
 apply_patch \
   "$repo_root/support/patches/dprint-wasm-trim-crash-signals.patch" \
   "$source_dir/llvm/lib/Support/CrashRecoveryContext.cpp" \
-  'installExceptionOrSignalHandlers() {}'
+  '#endif // !__wasm__'
 
 apply_patch \
   "$repo_root/support/patches/dprint-wasm-trim-env-path.patch" \
@@ -80,12 +75,6 @@ apply_patch \
   'return nullptr;'
 
 apply_patch \
-  "$repo_root/support/patches/dprint-wasm-trim-path-fs.patch" \
-  "$source_dir/llvm/lib/Support/Unix/Path.inc" \
-  'disk_space(const Twine &Path)'
-
-apply_patch \
   "$repo_root/support/patches/dprint-wasm-trim-process-chrono.patch" \
-  "$source_dir/llvm/lib/Support/Unix/Process.inc" \
-  'return Pid(1);'
-
+  "$source_dir/llvm/lib/Support/Chrono.cpp" \
+  '(void)OurTime;'
