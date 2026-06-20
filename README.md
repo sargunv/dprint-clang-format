@@ -22,9 +22,10 @@ mise run test
 C/C++ formatting is intentionally not wired to clang-format; this repo should
 self-host that after release.
 
-`mise deps llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies
-the patches in `support/patches/` (via `scripts/apply_llvm_patches.sh`). To
-verify patch reproducibility from a clean extract:
+The `llvm` mise dependency downloads pinned LLVM 22.1.7 into `third_party/` and
+applies the patches in `support/patches/` (via `scripts/fetch_llvm.sh`). It runs
+automatically before `mise run ...`. To verify patch reproducibility from a
+clean extract:
 
 ```sh
 rm -rf third_party/llvm-project-22.1.7.src
@@ -55,7 +56,7 @@ int main() { return 1; }
 - `schema.json` — permissive dprint config schema for the clang-format option
   map
 - `CMakeLists.txt` — builds and links the plugin against a minimal LibFormat
-  archive set (10 LLVM/clang static libraries, two passes)
+  archive set and drives the nested LLVM native-tool and Wasm LibFormat builds
 - `support/patches/` — LLVM wasm freestanding guards (in-memory VFS, no real FS,
   signal/process/env trims)
 - `support/wasm-sysroot/` and `support/libcxx-wasm/` — freestanding headers

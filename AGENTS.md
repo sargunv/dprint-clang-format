@@ -9,8 +9,8 @@ LLVM/Clang LibFormat.
   allocator integration, and freestanding runtime shims.
 - `cmake/toolchains/` contains CMake toolchain files that must be loaded before
   `project()` enables languages.
-- `CMakeLists.txt` configures the `wasm32-unknown-unknown` plugin link against
-  the LLVM/Clang LibFormat archive closure.
+- `CMakeLists.txt` configures the `wasm32-unknown-unknown` plugin link and
+  drives the nested LLVM native-tool and Wasm LibFormat builds.
 - `scripts/` contains focused helper scripts that are still useful outside mise
   task bodies.
 - `tests/` contains the owned ABI and dprint CLI integration tests.
@@ -22,8 +22,9 @@ LLVM/Clang LibFormat.
 ## Dev tool commands
 
 - `mise install` installs the pinned host tools and hk hook.
-- `mise deps llvm` downloads pinned LLVM source and applies patches.
-- `mise run configure` configures the LLVM/Clang Wasm build and plugin build.
+- `mise deps llvm` downloads pinned LLVM source and applies patches; it also
+  runs automatically before `mise run ...`.
+- `mise run configure` configures the top-level CMake project.
 - `mise run build` builds the LibFormat archive closure and plugin Wasm.
 - `mise run test` builds, then tests `build/plugin.wasm`.
 

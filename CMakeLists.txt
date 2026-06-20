@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 4.0)
 
 project(dprint_plugin_clang_format LANGUAGES C CXX)
 
+include(ExternalProject)
+
 set(LLVM_VERSION "22.1.7" CACHE STRING "LLVM source/build version")
 set(LLVM_SRC "${PROJECT_SOURCE_DIR}/third_party/llvm-project-${LLVM_VERSION}.src" CACHE PATH
     "Patched LLVM source directory")
-set(LLVM_WASM_BUILD "${PROJECT_SOURCE_DIR}/build/llvm-wasm" CACHE PATH
+set(LLVM_NATIVE_BUILD "${PROJECT_BINARY_DIR}/llvm-native" CACHE PATH
+    "LLVM native tools build directory")
+set(LLVM_WASM_BUILD "${PROJECT_BINARY_DIR}/llvm-wasm" CACHE PATH
     "LLVM wasm build directory")
 set(PLUGIN_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/build" CACHE PATH "Plugin output directory")
 
@@ -40,11 +44,39 @@ set(LIBCXX_SOURCES
   "${LLVM_SRC}/libcxx/src/system_error.cpp"
 )
 
-foreach(archive IN LISTS REQUIRED_LIBFORMAT_ARCHIVES)
-  if(NOT EXISTS "${archive}")
-    message(FATAL_ERROR "Required archive not found: ${archive}. Run: mise run build")
-  endif()
-endforeach()
+ExternalProject_Add(llvm_native_tools
+  SOURCE_DIR "${LLVM_SRC}/llvm"
+  BINARY_DIR "${LLVM_NATIVE_BUILD}"
+  CMAKE_ARGS
+    -G Ninja
+    -DCMAKE_BUILD_TYPE=Release
+    -DLLVM_ENABLE_PROJECTS=clang
+    -DLLVM_TARGETS_TO_BUILD=
+    -DLLVM_INCLUDE_TESTS=OFF
+    -DLLVM_INCLUDE_BENCHMARKS=OFF
+    -DLLVM_INCLUDE_EXAMPLES=OFF
+    -DLLVM_ENABLE_BINDINGS=OFF
+  BUILD_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --target llvm-tblgen clang-tblgen
+  INSTALL_COMMAND ""
+  BUILD_BYPRODUCTS
+    "${LLVM_NATIVE_BUILD}/bin/llvm-tblgen"
+    "${LLVM_NATIVE_BUILD}/bin/clang-tblgen"
+)
+
+ExternalProject_Add(llvm_libformat
+  SOURCE_DIR "${LLVM_SRC}/llvm"
+  BINARY_DIR "${LLVM_WASM_BUILD}"
+  DEPENDS llvm_native_tools
+  CMAKE_ARGS
+    -G Ninja
+    -C "${PROJECT_SOURCE_DIR}/cmake/llvm-wasm-cache.cmake"
+    -DLLVM_NATIVE_TOOL_DIR=${LLVM_NATIVE_BUILD}/bin
+    -DLLVM_TABLEGEN=${LLVM_NATIVE_BUILD}/bin/llvm-tblgen
+    -DCLANG_TABLEGEN=${LLVM_NATIVE_BUILD}/bin/clang-tblgen
+  BUILD_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --target clangFormat
+  INSTALL_COMMAND ""
+  BUILD_BYPRODUCTS ${REQUIRED_LIBFORMAT_ARCHIVES}
+)
 
 add_executable(plugin
   src/dprint_plugin.cpp
@@ -52,6 +84,7 @@ add_executable(plugin
   src/wasm_runtime_core.cpp
   ${LIBCXX_SOURCES}
 )
+add_dependencies(plugin llvm_libformat)
 
 set_target_properties(plugin PROPERTIES
   OUTPUT_NAME "plugin"
