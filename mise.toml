@@ -23,7 +23,6 @@ run = "pixi install --locked"
 auto = true
 sources = [
   "support/patches",
-  "scripts/apply_llvm_patches.sh",
   "scripts/fetch_llvm.sh",
 ]
 outputs = ["third_party/llvm-project-22.1.7.src/llvm/CMakeLists.txt"]
