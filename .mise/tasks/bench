@@ -6,12 +6,12 @@ set -euo pipefail
 
 llvm_src="third_party/llvm-project-22.1.7.src"
 plugin_path="$PWD/build/plugin.wasm"
-clang_format_path="$(mise which clang-format)"
-dprint_path="$(mise which dprint)"
+clang_format_path="$(command -v clang-format)"
+dprint_path="$(command -v dprint)"
 
-file_limit="${BENCH_FILE_LIMIT:-}"
-warmup="${BENCH_WARMUP:-0}"
-runs="${BENCH_RUNS:-1}"
+file_limit="${BENCH_FILE_LIMIT:-250}"
+warmup="${BENCH_WARMUP:-1}"
+runs="${BENCH_RUNS:-3}"
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -34,7 +34,7 @@ find "$llvm_src" -type f \
   \) \
   | sort > "$file_list"
 
-if [[ -n "$file_limit" ]]; then
+if [[ "$file_limit" != "all" ]]; then
   limited_file_list="$tmp_dir/files.limited.txt"
   head -n "$file_limit" "$file_list" > "$limited_file_list"
   file_list="$limited_file_list"
@@ -60,7 +60,7 @@ native_command='while IFS= read -r file; do "$DPRINT_BENCH_CLANG_FORMAT" --style
 dprint_command='while IFS= read -r file; do "$DPRINT_BENCH_DPRINT" fmt --stdin "$file" --config "$DPRINT_BENCH_CONFIG" --config-discovery=false < "$file" > /dev/null; done < "$DPRINT_BENCH_FILE_LIST"'
 
 echo "Benchmarking stdin formatting over $file_count LLVM/Clang source files."
-echo "Set BENCH_FILE_LIMIT, BENCH_RUNS, or BENCH_WARMUP to adjust runtime."
+echo "Set BENCH_FILE_LIMIT=all for the full LLVM tree, or set BENCH_RUNS/BENCH_WARMUP to adjust rounds."
 
 hyperfine \
   --warmup "$warmup" \
