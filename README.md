@@ -75,3 +75,29 @@ It is built for `wasm32-unknown-unknown` with no Wasm imports.
 We patch LLVM to disable code paths that do not make sense in a sandboxed dprint
 plugin, such as real filesystem probing, process/environment helpers,
 crash/signal handling, and other cold-path host facilities.
+
+## Performance
+
+I expected this to have some overhead compared to native clang-format, but it
+appears to be about 30% faster for some reason. Try it yourself with
+`mise run bench`.
+
+```txt
+Benchmarking stdin formatting over 250 LLVM/Clang source files.
+Set BENCH_FILE_LIMIT=all for the full LLVM tree, or set BENCH_RUNS/BENCH_WARMUP to adjust rounds.
+Benchmark 1: native clang-format
+  Time (mean ± σ):      6.469 s ±  0.095 s    [User: 4.691 s, System: 1.502 s]
+  Range (min … max):    6.385 s …  6.573 s    3 runs
+
+Benchmark 2: dprint wasm plugin
+  Time (mean ± σ):      4.969 s ±  0.094 s    [User: 2.986 s, System: 1.674 s]
+  Range (min … max):    4.913 s …  5.078 s    3 runs
+
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+
+Summary
+  dprint wasm plugin ran
+    1.30 ± 0.03 times faster than native clang-format
+```
+
+Tested on MacBook Pro 14" with an M5 Pro.
