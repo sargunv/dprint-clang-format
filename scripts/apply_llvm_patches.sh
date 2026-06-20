@@ -9,7 +9,7 @@ source_dir="third_party/llvm-project-${llvm_version}.src"
 
   if [[ ! -f "$source_dir/clang/lib/Format/Format.cpp" ]]; then
     echo "LLVM source not found at $source_dir" >&2
-  echo "run: mise run fetch-llvm" >&2
+  echo "run: mise deps llvm" >&2
   exit 1
 fi
 

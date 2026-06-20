@@ -24,11 +24,10 @@ LLVM/Clang LibFormat.
 - `mise run fix` formats repo metadata files with dprint. It intentionally does
   not run clang-format; the project should self-host C/C++ formatting after
   release.
-- `mise run fetch-llvm` downloads pinned LLVM source and applies patches.
-- `mise run configure-llvm-wasm` configures the LLVM/Clang Wasm cross-build.
-- `mise run build-llvm-format` builds the LibFormat archive closure.
-- `mise run configure-dprint-plugin` configures the plugin CMake build.
-- `mise run test` builds and tests `build/plugin.wasm`.
+- `mise deps llvm` downloads pinned LLVM source and applies patches.
+- `mise run configure` configures the LLVM/Clang Wasm build and plugin build.
+- `mise run build` builds the LibFormat archive closure and plugin Wasm.
+- `mise run test` builds, then tests `build/plugin.wasm`.
 
 ## Project invariants
 

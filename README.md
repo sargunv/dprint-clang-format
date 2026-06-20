@@ -14,11 +14,8 @@ integration tests for the plugin behavior this repo owns.
 
 ```sh
 mise install
-mise run pixi-install
-mise run fetch-llvm
-mise run configure-llvm-wasm
-mise run build-llvm-format
-mise run configure-dprint-plugin
+mise run configure
+mise run build
 mise run test
 ```
 
@@ -26,13 +23,13 @@ Use `mise run check` for the configured repo checks and `mise run fix` to format
 repo metadata files. C/C++ formatting is intentionally not wired to
 clang-format; this repo should self-host that after release.
 
-`fetch-llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies the
-patches in `support/patches/` (via `scripts/apply_llvm_patches.sh`). To verify
-patch reproducibility from a clean extract:
+`mise deps llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies
+the patches in `support/patches/` (via `scripts/apply_llvm_patches.sh`). To
+verify patch reproducibility from a clean extract:
 
 ```sh
 rm -rf third_party/llvm-project-22.1.7.src
-mise run fetch-llvm
+mise deps llvm
 ```
 
 `mise run test` builds `build/plugin.wasm`, verifies the module has zero
@@ -60,8 +57,6 @@ int main() { return 1; }
   map
 - `CMakeLists.txt` — builds and links the plugin against a minimal LibFormat
   archive set (10 LLVM/clang static libraries, two passes)
-- `scripts/configure_llvm_wasm.sh` — cross-build LLVM/Clang for
-  `wasm32-unknown-unknown`
 - `support/patches/` — LLVM wasm freestanding guards (in-memory VFS, no real FS,
   signal/process/env trims)
 - `support/wasm-sysroot/` and `support/libcxx-wasm/` — freestanding headers

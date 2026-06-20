@@ -42,7 +42,7 @@ set(LIBCXX_SOURCES
 
 foreach(archive IN LISTS REQUIRED_LIBFORMAT_ARCHIVES)
   if(NOT EXISTS "${archive}")
-    message(FATAL_ERROR "Required archive not found: ${archive}. Run: mise run build-llvm-format")
+    message(FATAL_ERROR "Required archive not found: ${archive}. Run: mise run build")
   endif()
 endforeach()
 
