@@ -12,7 +12,7 @@ struct timeval {
 extern "C" {
 #endif
 
-int gettimeofday(struct timeval* tv, void* tz);
+int gettimeofday(struct timeval *tv, void *tz);
 
 #ifdef __cplusplus
 }

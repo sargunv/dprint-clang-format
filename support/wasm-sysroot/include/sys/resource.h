@@ -16,7 +16,7 @@ struct rusage {
   long ru_maxrss;
 };
 
-#define RLIM_INFINITY ((rlim_t)-1)
+#define RLIM_INFINITY ((rlim_t) - 1)
 #define RLIMIT_CORE 0
 #define RLIMIT_DATA 1
 #define RLIMIT_STACK 2
@@ -27,9 +27,9 @@ struct rusage {
 extern "C" {
 #endif
 
-int getrlimit(int resource, struct rlimit* limit);
-int setrlimit(int resource, const struct rlimit* limit);
-int getrusage(int who, struct rusage* usage);
+int getrlimit(int resource, struct rlimit *limit);
+int setrlimit(int resource, const struct rlimit *limit);
+int getrusage(int who, struct rusage *usage);
 
 #ifdef __cplusplus
 }

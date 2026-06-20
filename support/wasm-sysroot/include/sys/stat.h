@@ -44,11 +44,11 @@ struct stat {
 extern "C" {
 #endif
 
-int fstat(int fd, struct stat* buffer);
-int lstat(const char* path, struct stat* buffer);
-int mkdir(const char* path, mode_t mode);
-int stat(const char* path, struct stat* buffer);
-int chmod(const char* path, mode_t mode);
+int fstat(int fd, struct stat *buffer);
+int lstat(const char *path, struct stat *buffer);
+int mkdir(const char *path, mode_t mode);
+int stat(const char *path, struct stat *buffer);
+int chmod(const char *path, mode_t mode);
 int fchmod(int fd, mode_t mode);
 mode_t umask(mode_t mask);
 

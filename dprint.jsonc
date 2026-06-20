@@ -4,6 +4,7 @@
   "indentWidth": 2,
   "useTabs": false,
   "newLineKind": "lf",
+  "excludes": ["support/allocators/dlmalloc/malloc.c"],
   "json": { "preferSingleLine": true },
   "markdown": { "textWrap": "always" },
   "plugins": [
@@ -11,5 +12,6 @@
     "https://plugins.dprint.dev/toml-0.7.0.wasm",
     "https://plugins.dprint.dev/markdown-0.22.1.wasm",
     "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
+    "https://plugins.dprint.dev/sargunv/dprint-clang-format-0.1.0.wasm",
   ],
 }

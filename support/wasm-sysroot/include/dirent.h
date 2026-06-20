@@ -13,9 +13,9 @@ struct dirent {
 extern "C" {
 #endif
 
-DIR* opendir(const char* path);
-struct dirent* readdir(DIR* dir);
-int closedir(DIR* dir);
+DIR *opendir(const char *path);
+struct dirent *readdir(DIR *dir);
+int closedir(DIR *dir);
 
 #ifdef __cplusplus
 }

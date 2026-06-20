@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 int fcntl(int fd, int cmd, ...);
-int open(const char* path, int flags, ...);
+int open(const char *path, int flags, ...);
 
 #ifdef __cplusplus
 }

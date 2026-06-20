@@ -37,7 +37,7 @@ typedef struct {
 
 struct sigaction {
   sighandler_t sa_handler;
-  void (*sa_sigaction)(int, siginfo_t*, void*);
+  void (*sa_sigaction)(int, siginfo_t *, void *);
   sigset_t sa_mask;
   int sa_flags;
 };
@@ -47,11 +47,12 @@ extern "C" {
 #endif
 
 sighandler_t signal(int signum, sighandler_t handler);
-int sigemptyset(sigset_t* set);
-int sigfillset(sigset_t* set);
-int sigaddset(sigset_t* set, int signum);
-int sigaction(int signum, const struct sigaction* act, struct sigaction* oldact);
-int sigprocmask(int how, const sigset_t* set, sigset_t* oldset);
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signum);
+int sigaction(int signum, const struct sigaction *act,
+              struct sigaction *oldact);
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 int raise(int signum);
 int kill(pid_t pid, int signum);
 

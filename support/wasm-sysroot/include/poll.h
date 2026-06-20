@@ -18,7 +18,7 @@ struct pollfd {
 extern "C" {
 #endif
 
-int poll(struct pollfd* fds, nfds_t nfds, int timeout);
+int poll(struct pollfd *fds, nfds_t nfds, int timeout);
 
 #ifdef __cplusplus
 }

@@ -21,11 +21,12 @@ extern "C" {
 #endif
 
 int socket(int domain, int type, int protocol);
-int connect(int socket, const struct sockaddr* address, socklen_t address_len);
-int bind(int socket, const struct sockaddr* address, socklen_t address_len);
+int connect(int socket, const struct sockaddr *address, socklen_t address_len);
+int bind(int socket, const struct sockaddr *address, socklen_t address_len);
 int listen(int socket, int backlog);
-int accept(int socket, struct sockaddr* address, socklen_t* address_len);
-int setsockopt(int socket, int level, int option_name, const void* option_value, socklen_t option_len);
+int accept(int socket, struct sockaddr *address, socklen_t *address_len);
+int setsockopt(int socket, int level, int option_name, const void *option_value,
+               socklen_t option_len);
 
 #ifdef __cplusplus
 }

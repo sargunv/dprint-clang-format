@@ -14,9 +14,9 @@
 extern "C" {
 #endif
 
-int waitpid(int pid, int* status, int options);
-pid_t wait4(pid_t pid, int* status, int options, struct rusage* usage);
-int wait(int* status);
+int waitpid(int pid, int *status, int options);
+pid_t wait4(pid_t pid, int *status, int options, struct rusage *usage);
+int wait(int *status);
 
 #ifdef __cplusplus
 }

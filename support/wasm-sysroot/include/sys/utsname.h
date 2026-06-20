@@ -13,7 +13,7 @@ struct utsname {
 extern "C" {
 #endif
 
-int uname(struct utsname* name);
+int uname(struct utsname *name);
 
 #ifdef __cplusplus
 }

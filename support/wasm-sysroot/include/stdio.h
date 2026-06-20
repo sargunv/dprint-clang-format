@@ -10,19 +10,20 @@ typedef struct FILE FILE;
 extern "C" {
 #endif
 
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
+extern FILE *stdin;
+extern FILE *stdout;
+extern FILE *stderr;
 
-int remove(const char* path);
-int rename(const char* old_path, const char* new_path);
-int feof(FILE* stream);
-int ferror(FILE* stream);
-int fflush(FILE* stream);
-int fprintf(FILE* stream, const char* format, ...);
-int printf(const char* format, ...);
-int snprintf(char* buffer, unsigned long size, const char* format, ...);
-int vsnprintf(char* buffer, unsigned long size, const char* format, __builtin_va_list args);
+int remove(const char *path);
+int rename(const char *old_path, const char *new_path);
+int feof(FILE *stream);
+int ferror(FILE *stream);
+int fflush(FILE *stream);
+int fprintf(FILE *stream, const char *format, ...);
+int printf(const char *format, ...);
+int snprintf(char *buffer, unsigned long size, const char *format, ...);
+int vsnprintf(char *buffer, unsigned long size, const char *format,
+              __builtin_va_list args);
 
 #ifdef __cplusplus
 }

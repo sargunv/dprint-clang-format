@@ -7,21 +7,21 @@
 #define RTLD_GLOBAL 0x100
 
 typedef struct {
-  const char* dli_fname;
-  void* dli_fbase;
-  const char* dli_sname;
-  void* dli_saddr;
+  const char *dli_fname;
+  void *dli_fbase;
+  const char *dli_sname;
+  void *dli_saddr;
 } Dl_info;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void* dlopen(const char* path, int mode);
-void* dlsym(void* handle, const char* symbol);
-int dlclose(void* handle);
-char* dlerror(void);
-int dladdr(const void* address, Dl_info* info);
+void *dlopen(const char *path, int mode);
+void *dlsym(void *handle, const char *symbol);
+int dlclose(void *handle);
+char *dlerror(void);
+int dladdr(const void *address, Dl_info *info);
 
 #ifdef __cplusplus
 }
