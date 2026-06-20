@@ -21,7 +21,6 @@ lockfile_platforms = [
 "aqua:ninja-build/ninja" = "1.13.2"
 "aqua:pnpm/pnpm" = "11.7.0"
 "aqua:sharkdp/hyperfine" = "1.20.0"
-"conda:clang-format" = "22.1.7"
 "core:node" = "24.17.0"
 "core:python" = "3.13"
 "github:prefix-dev/pixi" = "0.70.2"
@@ -38,7 +37,7 @@ sources = [
   "support/patches",
   "scripts/fetch_llvm.sh",
 ]
-outputs = ["third_party/llvm-project-22.1.7.src/llvm/CMakeLists.txt"]
+outputs = ["third_party/llvm-project-22.1.8.src/llvm/CMakeLists.txt"]
 run = "scripts/fetch_llvm.sh"
 
 [tasks.build]

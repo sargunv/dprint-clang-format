@@ -4,9 +4,9 @@
 
 set -euo pipefail
 
-llvm_src="third_party/llvm-project-22.1.7.src"
+llvm_src="third_party/llvm-project-22.1.8.src"
 plugin_path="$PWD/build/plugin.wasm"
-clang_format_path="$(command -v clang-format)"
+clang_format_path="$(pixi run bash -lc 'command -v clang-format')"
 dprint_path="$(command -v dprint)"
 
 file_limit="${BENCH_FILE_LIMIT:-250}"

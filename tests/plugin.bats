@@ -15,7 +15,7 @@ format_file_with_clang_format() {
   local style="$1"
   local source_path="$2"
 
-  clang-format --style="$style" "$source_path"
+  pixi run clang-format --style="$style" "$source_path"
 }
 
 write_config() {
@@ -64,31 +64,31 @@ assert_matches_clang_format() {
   "clangFormat": { "BasedOnStyle": "Microsoft", "ColumnLimit": 120, "IndentWidth": 4 }'
 
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp" \
+    "third_party/llvm-project-22.1.8.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp" \
     "$llvm_style" \
     "$llvm_config"
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/alg.sorting/assert.sort.invalid_comparator/assert.sort.invalid_comparator.pass.cpp" \
+    "third_party/llvm-project-22.1.8.src/libcxx/test/libcxx/algorithms/alg.sorting/assert.sort.invalid_comparator/assert.sort.invalid_comparator.pass.cpp" \
     "$microsoft_style" \
     "$microsoft_config"
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/llvm/include/llvm/ADT/SmallVector.h" \
+    "third_party/llvm-project-22.1.8.src/llvm/include/llvm/ADT/SmallVector.h" \
     "$llvm_style" \
     "$llvm_config"
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/llvm/lib/Support/CommandLine.cpp" \
+    "third_party/llvm-project-22.1.8.src/llvm/lib/Support/CommandLine.cpp" \
     "$llvm_style" \
     "$llvm_config"
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/clang/include/clang/Format/Format.h" \
+    "third_party/llvm-project-22.1.8.src/clang/include/clang/Format/Format.h" \
     "$llvm_style" \
     "$llvm_config"
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/clang/lib/Lex/Lexer.cpp" \
+    "third_party/llvm-project-22.1.8.src/clang/lib/Lex/Lexer.cpp" \
     "$microsoft_style" \
     "$microsoft_config"
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/clang/test/CodeGenObjCXX/objc-struct-cxx-abi.mm" \
+    "third_party/llvm-project-22.1.8.src/clang/test/CodeGenObjCXX/objc-struct-cxx-abi.mm" \
     "$llvm_style" \
     "$llvm_config"
 }
@@ -123,7 +123,7 @@ assert_matches_clang_format() {
 
 @test "dprint CLI accepts nested clangFormat config" {
   assert_matches_clang_format \
-    "third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp" \
+    "third_party/llvm-project-22.1.8.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp" \
     '{BasedOnStyle: LLVM, SpaceBeforeParens: Custom, SpaceBeforeParensOptions: {AfterControlStatements: false, AfterFunctionDeclarationName: true, AfterFunctionDefinitionName: true}}' \
     '
   "clangFormat": {
