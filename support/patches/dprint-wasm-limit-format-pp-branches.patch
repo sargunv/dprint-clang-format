@@ -1,0 +1,47 @@
+--- a/clang/lib/Format/UnwrappedLineParser.cpp
++++ b/clang/lib/Format/UnwrappedLineParser.cpp
+@@ -242,6 +242,36 @@
+     }
+     Callback.finishRun();
+     Lines.clear();
++#if defined(__wasm__)
++    // Avoid exhausting fixed wasm memory on deeply nested preprocessor trees.
++    constexpr size_t MaxPPBranchRuns = 16;
++    size_t PPBranchRuns = 1;
++    bool TooManyPPBranchRuns = false;
++    for (size_t Count : PPLevelBranchCount) {
++      if (Count == 0)
++        continue;
++      if (PPBranchRuns > MaxPPBranchRuns / Count) {
++        TooManyPPBranchRuns = true;
++        break;
++      }
++      PPBranchRuns *= Count;
++    }
++    if (TooManyPPBranchRuns) {
++      PPLevelBranchIndex.clear();
++      PPLevelBranchCount.clear();
++    } else {
++      while (!PPLevelBranchIndex.empty() &&
++             PPLevelBranchIndex.back() + 1 >= PPLevelBranchCount.back()) {
++        PPLevelBranchIndex.resize(PPLevelBranchIndex.size() - 1);
++        PPLevelBranchCount.resize(PPLevelBranchCount.size() - 1);
++      }
++      if (!PPLevelBranchIndex.empty()) {
++        ++PPLevelBranchIndex.back();
++        assert(PPLevelBranchIndex.size() == PPLevelBranchCount.size());
++        assert(PPLevelBranchIndex.back() <= PPLevelBranchCount.back());
++      }
++    }
++#else
+     while (!PPLevelBranchIndex.empty() &&
+            PPLevelBranchIndex.back() + 1 >= PPLevelBranchCount.back()) {
+       PPLevelBranchIndex.resize(PPLevelBranchIndex.size() - 1);
+@@ -254,6 +284,7 @@
+       assert(PPLevelBranchIndex.size() == PPLevelBranchCount.size());
+       assert(PPLevelBranchIndex.back() <= PPLevelBranchCount.back());
+     }
++#endif
+   } while (!PPLevelBranchIndex.empty());
+ }
+ 

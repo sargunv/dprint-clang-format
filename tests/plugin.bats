@@ -103,6 +103,22 @@ assert_matches_clang_format() {
     "$llvm_config"
 }
 
+@test "dprint CLI formats preprocessor-heavy C sources without trapping" {
+  config_path="$BATS_TEST_TMPDIR/dprint.json"
+  write_config "$config_path" '
+  "clangFormat": { "BasedOnStyle": "LLVM" }'
+
+  run --separate-stderr format_file_with_dprint \
+    "$config_path" \
+    "support/allocators/dlmalloc/malloc.c"
+
+  if [ "$status" -ne 0 ]; then
+    printf "%s\n" "$stderr"
+  fi
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"DLMALLOC_VERSION"* ]]
+}
+
 @test "dprint CLI resolves global options into clangFormat config" {
   config_path="$BATS_TEST_TMPDIR/dprint.json"
   write_config "$config_path" '
