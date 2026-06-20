@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+*.a -text -diff -merge -eol
+*.o -text -diff -merge -eol
+*.obj -text -diff -merge -eol
+*.wasm -text -diff -merge -eol
+
+*.patch text eol=lf
+*.sh text eol=lf
+.mise/tasks/* text eol=lf
