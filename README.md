@@ -19,9 +19,8 @@ mise run build
 mise run test
 ```
 
-Use `mise run check` for the configured repo checks and `mise run fix` to format
-repo metadata files. C/C++ formatting is intentionally not wired to
-clang-format; this repo should self-host that after release.
+C/C++ formatting is intentionally not wired to clang-format; this repo should
+self-host that after release.
 
 `mise deps llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies
 the patches in `support/patches/` (via `scripts/apply_llvm_patches.sh`). To

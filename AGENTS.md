@@ -20,10 +20,6 @@ LLVM/Clang LibFormat.
 ## Dev tool commands
 
 - `mise install` installs the pinned host tools and hk hook.
-- `mise run check` runs the configured repo checks.
-- `mise run fix` formats repo metadata files with dprint. It intentionally does
-  not run clang-format; the project should self-host C/C++ formatting after
-  release.
 - `mise deps llvm` downloads pinned LLVM source and applies patches.
 - `mise run configure` configures the LLVM/Clang Wasm build and plugin build.
 - `mise run build` builds the LibFormat archive closure and plugin Wasm.
