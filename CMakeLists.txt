@@ -68,7 +68,7 @@ ExternalProject_Add(llvm_libformat
   DEPENDS llvm_native_tools
   CMAKE_ARGS
     -G Ninja
-    -C "${PROJECT_SOURCE_DIR}/cmake/llvm-wasm-cache.cmake"
+    -C "${PROJECT_SOURCE_DIR}/cmake/llvm-libformat-wasm-cache.cmake"
     -DLLVM_NATIVE_TOOL_DIR=${LLVM_NATIVE_BUILD}/bin
     -DLLVM_TABLEGEN=${LLVM_NATIVE_BUILD}/bin/llvm-tblgen
     -DCLANG_TABLEGEN=${LLVM_NATIVE_BUILD}/bin/clang-tblgen

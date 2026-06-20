@@ -7,8 +7,8 @@ LLVM/Clang LibFormat.
 
 - `src/` contains the dprint Wasm plugin exports, LibFormat wrapper, fixed-heap
   allocator integration, and freestanding runtime shims.
-- `cmake/toolchains/` contains CMake toolchain files that must be loaded before
-  `project()` enables languages.
+- `cmake/` contains the top-level Wasm toolchain file and the LLVM LibFormat
+  Wasm initial-cache file.
 - `CMakeLists.txt` configures the `wasm32-unknown-unknown` plugin link and
   drives the nested LLVM native-tool and Wasm LibFormat builds.
 - `scripts/` contains focused helper scripts that are still useful outside mise

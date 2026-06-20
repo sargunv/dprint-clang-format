@@ -35,7 +35,7 @@ run = "pixi run cmake --build build/plugin --target plugin"
 
 [tasks.configure]
 description = "Configure the dprint plugin build."
-run = "pixi run cmake --fresh -S . -B build/plugin -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/wasm32-unknown-unknown.cmake"
+run = "pixi run cmake --fresh -S . -B build/plugin -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/wasm32-unknown-unknown-toolchain.cmake"
 
 [hooks]
 postinstall = ["hk install --mise"]

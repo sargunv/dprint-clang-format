@@ -1,6 +1,5 @@
-# CMake reads toolchain files before project() enables languages. Keep only
-# target system and compiler selection here; target build logic lives in
-# CMakeLists.txt.
+# Toolchain for configuring the top-level dprint plugin build as
+# wasm32-unknown-unknown.
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR wasm32)
 

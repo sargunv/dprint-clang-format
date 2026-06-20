@@ -1,5 +1,5 @@
-# Initial cache for configuring LLVM/Clang libraries as freestanding Wasm.
-# This file is consumed by CMake's `-C` option when configuring LLVM itself.
+# Initial cache for the nested LLVM configure that builds LibFormat for
+# wasm32-unknown-unknown.
 
 get_filename_component(DPRINT_CLANG_FORMAT_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
