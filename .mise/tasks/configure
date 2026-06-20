@@ -64,6 +64,6 @@ pixi run cmake \
   -DLLVM_ENABLE_BACKTRACES=OFF \
   -DLLVM_ENABLE_UNWIND_TABLES=OFF
 
-pixi run cmake -S . -B build/plugin -G Ninja \
+pixi run cmake --fresh -S . -B build/plugin -G Ninja \
   -DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/wasm32-unknown-unknown.cmake
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/wasm32-unknown-unknown.cmake

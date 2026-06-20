@@ -7,10 +7,12 @@ LLVM/Clang LibFormat.
 
 - `src/` contains the dprint Wasm plugin exports, LibFormat wrapper, fixed-heap
   allocator integration, and freestanding runtime shims.
-- `cmake/` and `CMakeLists.txt` configure the `wasm32-unknown-unknown` plugin
-  link against the LLVM/Clang LibFormat archive closure.
-- `scripts/` contains LLVM fetch/configure helpers and the integration test
-  driver.
+- `cmake/toolchains/` contains CMake toolchain files that must be loaded before
+  `project()` enables languages.
+- `CMakeLists.txt` configures the `wasm32-unknown-unknown` plugin link against
+  the LLVM/Clang LibFormat archive closure.
+- `scripts/` contains focused helper scripts that are still useful outside mise
+  task bodies.
 - `tests/` contains the owned ABI and dprint CLI integration tests.
 - `support/patches/` contains small LLVM patches for the freestanding Wasm
   build.

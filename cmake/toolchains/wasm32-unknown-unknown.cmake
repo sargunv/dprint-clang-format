@@ -1,3 +1,6 @@
+# CMake reads toolchain files before project() enables languages. Keep only
+# target system and compiler selection here; target build logic lives in
+# CMakeLists.txt.
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR wasm32)
 
