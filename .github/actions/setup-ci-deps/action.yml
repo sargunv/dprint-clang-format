@@ -1,0 +1,26 @@
+name: Setup CI deps
+description: Install mise toolchain and cache project dependencies
+
+runs:
+  using: composite
+  steps:
+    - name: Cache LLVM source
+      uses: actions/cache@v4
+      with:
+        path: |
+          third_party/cache
+          third_party/llvm-project-22.1.7.src
+        key: llvm-22.1.7-v1-${{ hashFiles('scripts/fetch_llvm.sh', 'support/patches/*.patch') }}
+
+    - name: Cache Pixi environment
+      uses: actions/cache@v4
+      with:
+        path: .pixi/envs/default
+        key: pixi-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pixi.lock') }}
+
+    - name: Install mise toolchain
+      uses: jdx/mise-action@v4
+      with:
+        cache: true
+        cache_key_prefix: mise-v1
+        install: true

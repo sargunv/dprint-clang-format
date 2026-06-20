@@ -43,5 +43,14 @@ description = "Test the built dprint plugin."
 depends = ["build"]
 run = "bats tests"
 
+[tasks.hygiene]
+description = "Run repository hygiene checks."
+run = "mise tasks validate && hk check --all"
+
+[tasks.ci-build]
+description = "Build and test the dprint plugin Wasm artifact for CI."
+depends = ["test"]
+run = "test -f build/plugin.wasm"
+
 [hooks]
 postinstall = ["hk install --mise"]
