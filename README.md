@@ -22,6 +22,10 @@ mise run configure-dprint-plugin
 mise run test
 ```
 
+Use `mise run check` for the configured repo checks and `mise run fix` to format
+repo metadata files. C/C++ formatting is intentionally not wired to
+clang-format; this repo should self-host that after release.
+
 `fetch-llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies the
 patches in `support/patches/` (via `scripts/apply_llvm_patches.sh`). To verify
 patch reproducibility from a clean extract:
@@ -31,9 +35,8 @@ rm -rf third_party/llvm-project-22.1.7.src
 mise run fetch-llvm
 ```
 
-`mise run test` builds `build/plugin.wasm`, verifies the
-module has zero imports, exercises the plugin ABI from Node, and runs the dprint
-CLI:
+`mise run test` builds `build/plugin.wasm`, verifies the module has zero
+imports, exercises the plugin ABI from Node, and runs the dprint CLI:
 
 ```sh
 printf 'int main(){return 1;}\n' |
@@ -53,7 +56,8 @@ int main() { return 1; }
 - `src/wasm_allocator.c` — vendored dlmalloc integration for fixed-memory Wasm
 - `src/wasm_runtime_core.cpp` — mem*, freestanding libc, and C++ runtime shims
 - `tests/` — ABI and dprint CLI integration tests
-- `schema.json` — permissive dprint config schema for the clang-format option map
+- `schema.json` — permissive dprint config schema for the clang-format option
+  map
 - `CMakeLists.txt` — builds and links the plugin against a minimal LibFormat
   archive set (10 LLVM/clang static libraries, two passes)
 - `scripts/configure_llvm_wasm.sh` — cross-build LLVM/Clang for
@@ -71,9 +75,10 @@ Known release semantics:
 - `.clang-format` filesystem discovery is not supported in the sandboxed plugin.
   `BasedOnStyle: file` and `InheritParentConfig` are reported as config
   diagnostics.
-- `check_config_updates` returns an empty ok response because there are no config
-  migrations yet.
-- Wasm size/link reports and further sysroot trimming are optional future polish.
+- `check_config_updates` returns an empty ok response because there are no
+  config migrations yet.
+- Wasm size/link reports and further sysroot trimming are optional future
+  polish.
 
 ## Plugin surface
 
@@ -86,11 +91,11 @@ as JSON keys (PascalCase, e.g. `BasedOnStyle`, `ColumnLimit`). The legacy
 dprint global options map into clang-format when not overridden in
 `clangFormat`:
 
-| dprint global | clang-format |
-|---------------|--------------|
-| `lineWidth` | `ColumnLimit` |
+| dprint global | clang-format  |
+| ------------- | ------------- |
+| `lineWidth`   | `ColumnLimit` |
 | `indentWidth` | `IndentWidth` |
-| `useTabs` | `UseTab` |
+| `useTabs`     | `UseTab`      |
 
 The plugin does not discover `.clang-format` files from the filesystem.
 

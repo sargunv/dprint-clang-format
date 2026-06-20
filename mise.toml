@@ -1,13 +1,35 @@
+[settings]
+experimental = true
+pin = true
+install_before = "3d"
+lockfile = true
+
 [tools]
-cmake = "4.3.3"
-dprint = "0.54.0"
-ninja = "1.13.2"
-pixi = "0.70.2"
-python = "3.13"
+"aqua:apple/pkl" = "0.31.1"
+"aqua:dprint/dprint" = "0.54.0"
+"aqua:jdx/hk" = "1.48.0"
+"aqua:Kitware/CMake" = "4.3.3"
+"core:python" = "3.13"
+"github:ninja-build/ninja" = "1.13.2"
+"github:prefix-dev/pixi" = "0.70.2"
+
+[deps.pixi]
+auto = true
+sources = ["pixi.toml", "pixi.lock"]
+outputs = [".pixi/envs/default"]
+run = "pixi install --locked"
 
 [tasks.pixi-install]
 description = "Install the pixi-managed build and inspection tools."
-run = "pixi install"
+run = "pixi install --locked"
+
+[tasks.check]
+description = "Run configured repo checks."
+run = "hk check --all"
+
+[tasks.fix]
+description = "Run configured repo fixers."
+run = "hk fix --all"
 
 [tasks.fetch-llvm]
 description = "Download pinned LLVM source and apply wasm patches."
@@ -32,3 +54,6 @@ run = "pixi run cmake --build build/plugin --target plugin"
 [tasks.test]
 description = "Build and test the dprint plugin."
 run = "pixi run scripts/test_plugin.sh"
+
+[hooks]
+postinstall = ["hk install --mise"]

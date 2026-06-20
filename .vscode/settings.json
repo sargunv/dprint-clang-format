@@ -1,0 +1,5 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "dprint.dprint",
+  "json.schemaDownload.trustedDomains": { "https://dprint.dev": true }
+}

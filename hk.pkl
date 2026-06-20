@@ -1,0 +1,21 @@
+amends "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.48.0/hk@1.48.0#/Builtins.pkl"
+
+local lintSteps = new Mapping<String, Step> {
+  ["dprint"] = Builtins.dprint
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = lintSteps
+  }
+  ["check"] {
+    steps = lintSteps
+  }
+  ["fix"] {
+    fix = true
+    steps = lintSteps
+  }
+}

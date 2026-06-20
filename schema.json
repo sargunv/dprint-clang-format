@@ -8,9 +8,7 @@
     "clangFormat": {
       "type": "object",
       "description": "clang-format options using clang-format YAML option names represented as JSON. Unknown or invalid options are reported by clang-format during dprint configuration resolution.",
-      "additionalProperties": {
-        "$ref": "#/$defs/clangFormatValue"
-      },
+      "additionalProperties": { "$ref": "#/$defs/clangFormatValue" },
       "properties": {
         "style": {
           "type": "string",
@@ -32,17 +30,10 @@
         { "type": "integer" },
         { "type": "boolean" },
         { "type": "null" },
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/clangFormatValue"
-          }
-        },
+        { "type": "array", "items": { "$ref": "#/$defs/clangFormatValue" } },
         {
           "type": "object",
-          "additionalProperties": {
-            "$ref": "#/$defs/clangFormatValue"
-          }
+          "additionalProperties": { "$ref": "#/$defs/clangFormatValue" }
         }
       ]
     }
