@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-#MISE description="Build the LibFormat archive closure and dprint plugin Wasm."
-#MISE depends=["configure"]
-set -euo pipefail
-
-pixi run cmake --build build/llvm-wasm --target clangFormat
-pixi run cmake --build build/plugin --target plugin

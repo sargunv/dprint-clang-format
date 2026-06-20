@@ -53,5 +53,10 @@ scripts/apply_llvm_patches.sh
 echo "LLVM source ready: $source_dir"
 '''
 
+[tasks.build]
+description = "Build the LibFormat archive closure and dprint plugin Wasm."
+depends = ["configure"]
+run = "pixi run cmake --build build/llvm-wasm --target clangFormat && pixi run cmake --build build/plugin --target plugin"
+
 [hooks]
 postinstall = ["hk install --mise"]
