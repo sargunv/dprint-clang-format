@@ -66,6 +66,15 @@ assert_matches_clang_format() {
   [[ "$output" != *"Import["* ]]
 }
 
+@test "plugin wasm uses small growable memory" {
+  run pixi run wasm-objdump -x "$plugin_path"
+
+  [ "$status" -eq 0 ]
+  memory_section="$(printf "%s\n" "$output" | sed -n '/^Memory\[/,/^Global\[/p')"
+  [[ "$memory_section" == *"pages: initial=33"* ]]
+  [[ "$memory_section" != *" max="* ]]
+}
+
 @test "dprint CLI matches clang-format across representative LLVM and Clang sources" {
   local llvm_style='{BasedOnStyle: LLVM}'
   local llvm_config='"clangFormat": { "BasedOnStyle": "LLVM" }'

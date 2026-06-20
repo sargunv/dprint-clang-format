@@ -174,8 +174,7 @@ set(DPRINT_PLUGIN_EXPORTS
 set(PLUGIN_LINK_OPTIONS
   -nostdlib
   LINKER:--no-entry
-  LINKER:--initial-memory=67108864
-  LINKER:--max-memory=67108864
+  LINKER:--initial-memory=2162688
   LINKER:--export=malloc
   LINKER:--export=free
   LINKER:--export-memory
