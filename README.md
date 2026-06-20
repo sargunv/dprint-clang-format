@@ -33,7 +33,7 @@ mise deps llvm
 ```
 
 `mise run test` builds `build/plugin.wasm`, verifies the module has zero
-imports, exercises the plugin ABI from Node, and runs the dprint CLI:
+imports, and exercises the plugin through dprint CLI commands:
 
 ```sh
 printf 'int main(){return 1;}\n' |
@@ -52,7 +52,7 @@ int main() { return 1; }
 - `src/dprint_plugin.cpp` — dprint schema v4 exports and LibFormat wrapper
 - `src/wasm_allocator.c` — vendored dlmalloc integration for fixed-memory Wasm
 - `src/wasm_runtime_core.cpp` — mem*, freestanding libc, and C++ runtime shims
-- `tests/` — Bats integration tests and the plugin ABI harness
+- `tests/` — Bats integration tests that exercise the plugin through dprint
 - `schema.json` — permissive dprint config schema for the clang-format option
   map
 - `CMakeLists.txt` — builds and links the plugin against a minimal LibFormat

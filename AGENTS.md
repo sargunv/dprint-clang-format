@@ -13,7 +13,8 @@ LLVM/Clang LibFormat.
   drives the nested LLVM native-tool and Wasm LibFormat builds.
 - `scripts/` contains focused helper scripts that are still useful outside mise
   task bodies.
-- `tests/` contains Bats integration tests and the plugin ABI harness.
+- `tests/` contains Bats integration tests that exercise the plugin through
+  dprint.
 - `support/patches/` contains small LLVM patches for the freestanding Wasm
   build.
 - `support/wasm-sysroot/` and `support/libcxx-wasm/` contain the minimal
