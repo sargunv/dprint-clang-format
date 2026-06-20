@@ -243,10 +243,6 @@ void merge_object_options(const llvm::json::Object& source, llvm::json::Object& 
                           std::vector<ConfigDiagnostic>& diagnostics) {
   (void)diagnostics;
   for (const auto& entry : source) {
-    if (entry.first == "style") {
-      options["BasedOnStyle"] = entry.second;
-      continue;
-    }
     options[entry.first] = entry.second;
   }
 }

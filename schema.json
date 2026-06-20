@@ -10,10 +10,6 @@
       "description": "clang-format options using clang-format YAML option names represented as JSON. Unknown or invalid options are reported by clang-format during dprint configuration resolution.",
       "additionalProperties": { "$ref": "#/$defs/clangFormatValue" },
       "properties": {
-        "style": {
-          "type": "string",
-          "description": "Legacy alias for BasedOnStyle."
-        },
         "BasedOnStyle": {
           "type": "string",
           "description": "Predefined clang-format base style. Filesystem-dependent values such as file and InheritParentConfig are not supported in the sandboxed Wasm plugin."

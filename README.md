@@ -80,8 +80,7 @@ Known release semantics:
 The plugin accepts C/C++/Obj-C-style extensions and formats the shared text
 buffer with `clang::format::reformat`. Plugin config uses
 [clang-format YAML option names](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)
-as JSON keys (PascalCase, e.g. `BasedOnStyle`, `ColumnLimit`). The legacy
-`style` key is accepted as an alias for `BasedOnStyle`.
+as JSON keys (PascalCase, e.g. `BasedOnStyle`, `ColumnLimit`).
 
 dprint global options map into clang-format when not overridden in
 `clangFormat`:

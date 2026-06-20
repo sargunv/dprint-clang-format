@@ -30,6 +30,25 @@ write_config() {
 JSON
 }
 
+assert_matches_clang_format() {
+  local source_path="$1"
+  local style="$2"
+  local config_body="$3"
+
+  local expected
+  local actual
+  expected="$(format_file_with_clang_format "$style" "$source_path")"
+
+  local config_path="$BATS_TEST_TMPDIR/dprint.json"
+  write_config "$config_path" "$config_body"
+
+  run format_file_with_dprint "$config_path" "$source_path"
+
+  [ "$status" -eq 0 ]
+  actual="$output"
+  [ "$actual" = "$expected" ]
+}
+
 @test "plugin wasm has zero imports" {
   run pixi run wasm-objdump -x "$plugin_path"
 
@@ -37,32 +56,41 @@ JSON
   [[ "$output" != *"Import["* ]]
 }
 
-@test "dprint CLI matches clang-format on real C++ source with LLVM style" {
-  source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp"
-  config_path="$BATS_TEST_TMPDIR/dprint.json"
-  write_config "$config_path" '
-  "clangFormat": { "BasedOnStyle": "LLVM" }'
+@test "dprint CLI matches clang-format across representative LLVM and Clang sources" {
+  local llvm_style='{BasedOnStyle: LLVM}'
+  local llvm_config='"clangFormat": { "BasedOnStyle": "LLVM" }'
+  local microsoft_style='{BasedOnStyle: Microsoft, ColumnLimit: 120, IndentWidth: 4}'
+  local microsoft_config='
+  "clangFormat": { "BasedOnStyle": "Microsoft", "ColumnLimit": 120, "IndentWidth": 4 }'
 
-  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM}' "$source_path")"
-  run format_file_with_dprint "$config_path" "$source_path"
-
-  [ "$status" -eq 0 ]
-  [ "$output" = "$expected" ]
-}
-
-@test "dprint CLI matches clang-format on real C++ source with Microsoft style" {
-  source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/alg.sorting/assert.sort.invalid_comparator/assert.sort.invalid_comparator.pass.cpp"
-  config_path="$BATS_TEST_TMPDIR/dprint.json"
-  write_config "$config_path" '
-  "clangFormat": { "BasedOnStyle": "Microsoft" },
-  "lineWidth": 120,
-  "indentWidth": 4'
-
-  expected="$(format_file_with_clang_format '{BasedOnStyle: Microsoft, ColumnLimit: 120, IndentWidth: 4}' "$source_path")"
-  run format_file_with_dprint "$config_path" "$source_path"
-
-  [ "$status" -eq 0 ]
-  [ "$output" = "$expected" ]
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp" \
+    "$llvm_style" \
+    "$llvm_config"
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/alg.sorting/assert.sort.invalid_comparator/assert.sort.invalid_comparator.pass.cpp" \
+    "$microsoft_style" \
+    "$microsoft_config"
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/llvm/include/llvm/ADT/SmallVector.h" \
+    "$llvm_style" \
+    "$llvm_config"
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/llvm/lib/Support/CommandLine.cpp" \
+    "$llvm_style" \
+    "$llvm_config"
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/clang/include/clang/Format/Format.h" \
+    "$llvm_style" \
+    "$llvm_config"
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/clang/lib/Lex/Lexer.cpp" \
+    "$microsoft_style" \
+    "$microsoft_config"
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/clang/test/CodeGenObjCXX/objc-struct-cxx-abi.mm" \
+    "$llvm_style" \
+    "$llvm_config"
 }
 
 @test "dprint CLI resolves global options into clangFormat config" {
@@ -94,9 +122,10 @@ JSON
 }
 
 @test "dprint CLI accepts nested clangFormat config" {
-  source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp"
-  config_path="$BATS_TEST_TMPDIR/dprint.json"
-  write_config "$config_path" '
+  assert_matches_clang_format \
+    "third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp" \
+    '{BasedOnStyle: LLVM, SpaceBeforeParens: Custom, SpaceBeforeParensOptions: {AfterControlStatements: false, AfterFunctionDeclarationName: true, AfterFunctionDefinitionName: true}}' \
+    '
   "clangFormat": {
     "BasedOnStyle": "LLVM",
     "SpaceBeforeParens": "Custom",
@@ -106,12 +135,6 @@ JSON
       "AfterFunctionDefinitionName": true
     }
   }'
-
-  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM, SpaceBeforeParens: Custom, SpaceBeforeParensOptions: {AfterControlStatements: false, AfterFunctionDeclarationName: true, AfterFunctionDefinitionName: true}}' "$source_path")"
-  run format_file_with_dprint "$config_path" "$source_path"
-
-  [ "$status" -eq 0 ]
-  [ "$output" = "$expected" ]
 }
 
 @test "dprint CLI rejects unsupported clangFormat options" {
