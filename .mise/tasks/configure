@@ -14,26 +14,11 @@ common_cxx_flags="-ffreestanding $host_flags -DCLANG_BUILD_STATIC=1 -fno-excepti
 common_c_flags="-ffreestanding $host_flags -DCLANG_BUILD_STATIC=1 -isystem $repo_root/support/wasm-sysroot/include"
 
 native_tool_dir="${LLVM_NATIVE_TOOL_DIR:-$repo_root/$build_dir/NATIVE/bin}"
-if [[ ! -f "$native_tool_dir/llvm-tblgen" && -f "$repo_root/build/llvm-wasm/NATIVE/bin/llvm-tblgen" ]]; then
-  native_tool_dir="$repo_root/build/llvm-wasm/NATIVE/bin"
-fi
-if [[ ! -f "$native_tool_dir/llvm-tblgen" ]]; then
-  echo "native tablegen tools not found at $native_tool_dir" >&2
-  echo "build host tools first: pixi run cmake --build build/llvm-wasm --target clang-tblgen llvm-tblgen" >&2
-  exit 1
-fi
-
-if [[ ! -f "$source_root/llvm/CMakeLists.txt" ]]; then
-  echo "LLVM source not found at $source_root" >&2
-  echo "run: mise deps llvm" >&2
-  exit 1
-fi
 
 pixi run cmake \
   -S "$source_root/llvm" \
   -B "$build_dir" \
   -G Ninja \
-  -DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DCMAKE_SYSTEM_NAME=Generic \
   -DCMAKE_C_COMPILER=clang \
@@ -44,7 +29,6 @@ pixi run cmake \
   -DCMAKE_C_FLAGS="$common_c_flags" \
   -DCMAKE_CXX_FLAGS="$common_cxx_flags" \
   -DLLVM_NATIVE_TOOL_DIR="$native_tool_dir" \
-  -DLLVM_HEADERS_TABLEGEN="$native_tool_dir/llvm-min-tblgen" \
   -DLLVM_TABLEGEN="$native_tool_dir/llvm-tblgen" \
   -DCLANG_TABLEGEN="$native_tool_dir/clang-tblgen" \
   -DLLVM_ENABLE_PROJECTS=clang \
@@ -57,7 +41,6 @@ pixi run cmake \
   -DLLVM_ENABLE_BINDINGS=OFF \
   -DLLVM_ENABLE_ZLIB=OFF \
   -DLLVM_ENABLE_ZSTD=OFF \
-  -DLLVM_ENABLE_TERMINFO=OFF \
   -DLLVM_ENABLE_LIBXML2=OFF \
   -DLLVM_ENABLE_THREADS=OFF \
   -DLLVM_ENABLE_PIC=OFF \
@@ -65,5 +48,4 @@ pixi run cmake \
   -DLLVM_ENABLE_UNWIND_TABLES=OFF
 
 pixi run cmake --fresh -S . -B build/plugin -G Ninja \
-  -DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
   -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/wasm32-unknown-unknown.cmake
