@@ -179,6 +179,40 @@ url = "https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-mac.
 checksum = "sha256:07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65"
 url = "https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-win.zip"
 
+[[tools."aqua:pnpm/pnpm"]]
+version = "11.7.0"
+backend = "aqua:pnpm/pnpm"
+
+[tools."aqua:pnpm/pnpm"."platforms.linux-arm64"]
+checksum = "sha256:a110731cf0f46cf89eb5659b42c9f5c3a2361d30087e2eed921c8378b1fe64a0"
+url = "https://github.com/pnpm/pnpm/releases/download/v11.7.0/pnpm-linux-arm64.tar.gz"
+provenance = "github-attestations"
+
+[tools."aqua:pnpm/pnpm"."platforms.linux-arm64-musl"]
+checksum = "sha256:9c82a83d0fa6dbcd4757f7846f20e73f77d451d6282b32602d9f933b5e2f4052"
+url = "https://github.com/pnpm/pnpm/releases/download/v11.7.0/pnpm-linux-arm64-musl.tar.gz"
+provenance = "github-attestations"
+
+[tools."aqua:pnpm/pnpm"."platforms.linux-x64"]
+checksum = "sha256:752e31654c6f24bc945db784d12831b80b29f533b43105575ce30dd3c8658609"
+url = "https://github.com/pnpm/pnpm/releases/download/v11.7.0/pnpm-linux-x64.tar.gz"
+provenance = "github-attestations"
+
+[tools."aqua:pnpm/pnpm"."platforms.linux-x64-musl"]
+checksum = "sha256:6fa3052e350a1aceeeac90c9f9b59ed048312cab04b34c0472b018e71b243885"
+url = "https://github.com/pnpm/pnpm/releases/download/v11.7.0/pnpm-linux-x64-musl.tar.gz"
+provenance = "github-attestations"
+
+[tools."aqua:pnpm/pnpm"."platforms.macos-arm64"]
+checksum = "sha256:97d077cca1225ae6ab492e5b6d0e6737ab7149c34813e70f25f67c6c2bf274a2"
+url = "https://github.com/pnpm/pnpm/releases/download/v11.7.0/pnpm-darwin-arm64.tar.gz"
+provenance = "github-attestations"
+
+[tools."aqua:pnpm/pnpm"."platforms.windows-x64"]
+checksum = "sha256:08acc088646c1dbf3030984918266058d23c5acf4c518dc7502bd539fc99c280"
+url = "https://github.com/pnpm/pnpm/releases/download/v11.7.0/pnpm-win32-x64.zip"
+provenance = "github-attestations"
+
 [[tools."github:prefix-dev/pixi"]]
 version = "0.70.2"
 backend = "github:prefix-dev/pixi"
@@ -238,6 +272,10 @@ url_api = "https://api.github.com/repos/prefix-dev/pixi/releases/assets/44180212
 
 [tools."github:prefix-dev/pixi"."platforms.windows-x64".provenance.slsa]
 url = "https://github.com/prefix-dev/pixi/releases/download/v0.70.2/attestations-x86_64-pc-windows-msvc.intoto.jsonl"
+
+[[tools.node]]
+version = "24.17.0"
+backend = "core:node"
 
 [[tools.python]]
 version = "3.13.14"

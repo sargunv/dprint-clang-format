@@ -11,6 +11,8 @@ lockfile = true
 "aqua:jdx/hk" = "1.48.0"
 "aqua:Kitware/CMake" = "4.3.3"
 "aqua:ninja-build/ninja" = "1.13.2"
+"aqua:pnpm/pnpm" = "11.7.0"
+"core:node" = "24.17.0"
 "core:python" = "3.13"
 "github:prefix-dev/pixi" = "0.70.2"
 
@@ -47,10 +49,9 @@ run = "bats tests"
 description = "Run repository hygiene checks."
 run = "mise tasks validate && hk check --all"
 
-[tasks.ci-build]
-description = "Build and test the dprint plugin Wasm artifact for CI."
-depends = ["test"]
-run = "test -f build/plugin.wasm"
+[tasks.actions-up]
+description = "Update and pin GitHub Actions steps."
+run = "pnpm dlx actions-up --yes"
 
 [hooks]
 postinstall = ["hk install --mise"]
