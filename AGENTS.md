@@ -34,5 +34,5 @@ Strategies (maintainability-first):
   pass style configuration through dprint config instead.
 - LLVM source lives in gitignored `third_party/`; wasm freestanding patches live in
   `support/patches/`.
-- Success criterion: `pixi run smoke-dprint-plugin` passes (zero Wasm imports, dprint CLI
+- Success criterion: `mise run test` passes (zero Wasm imports, dprint CLI
   formats stdin).

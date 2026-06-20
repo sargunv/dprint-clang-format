@@ -7,9 +7,9 @@ cd "$repo_root"
 llvm_version="${LLVM_VERSION:-22.1.7}"
 source_dir="third_party/llvm-project-${llvm_version}.src"
 
-if [[ ! -f "$source_dir/clang/lib/Format/Format.cpp" ]]; then
-  echo "LLVM source not found at $source_dir" >&2
-  echo "run: pixi run fetch-llvm" >&2
+  if [[ ! -f "$source_dir/clang/lib/Format/Format.cpp" ]]; then
+    echo "LLVM source not found at $source_dir" >&2
+  echo "run: mise run fetch-llvm" >&2
   exit 1
 fi
 

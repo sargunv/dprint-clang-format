@@ -1,11 +1,34 @@
 [tools]
+cmake = "4.3.3"
 dprint = "0.54.0"
-pixi = "0.69.0"
+ninja = "1.13.2"
+pixi = "0.70.2"
+python = "3.13"
 
 [tasks.pixi-install]
 description = "Install the pixi-managed build and inspection tools."
 run = "pixi install"
 
-[tasks.check-tools]
-description = "Show the tool versions used by the LibFormat Wasm spike."
-run = "pixi run check-tools"
+[tasks.fetch-llvm]
+description = "Download pinned LLVM source and apply wasm patches."
+run = "pixi run scripts/fetch_llvm.sh"
+
+[tasks.configure-llvm-wasm]
+description = "Configure the patched LLVM/Clang wasm cross-build."
+run = "pixi run scripts/configure_llvm_wasm.sh"
+
+[tasks.build-llvm-format]
+description = "Build the LLVM/Clang LibFormat archive closure."
+run = "pixi run ninja -C build/llvm-wasm clangFormat"
+
+[tasks.configure-dprint-plugin]
+description = "Configure the dprint plugin CMake build."
+run = "pixi run sh -c 'cmake -S . -B build/plugin -G Ninja -DCMAKE_MAKE_PROGRAM=\"$(command -v ninja)\" -DCMAKE_TOOLCHAIN_FILE=cmake/wasm32-unknown-unknown.cmake'"
+
+[tasks.build-dprint-plugin]
+description = "Build build/plugin.wasm."
+run = "pixi run cmake --build build/plugin --target plugin"
+
+[tasks.test]
+description = "Build and test the dprint plugin."
+run = "pixi run scripts/test_plugin.sh"

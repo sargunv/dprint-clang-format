@@ -4,7 +4,10 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-bash scripts/link_libformat_wasm.sh
+cmake -S . -B build/plugin -G Ninja \
+  -DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/wasm32-unknown-unknown.cmake
+cmake --build build/plugin --target plugin
 
 import_count="$(
   wasm-objdump -x build/plugin.wasm |

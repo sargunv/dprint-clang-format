@@ -1,3 +1,5 @@
+#include <time.h>
+
 #include "clang/Format/Format.h"
 #include "clang/Tooling/Core/Replacement.h"
 

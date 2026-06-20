@@ -15,10 +15,11 @@ integration tests for the plugin behavior this repo owns.
 ```sh
 mise install
 mise run pixi-install
-pixi run fetch-llvm
-pixi run configure-llvm-wasm
-pixi run ninja -C build/llvm-wasm clangFormat
-pixi run test
+mise run fetch-llvm
+mise run configure-llvm-wasm
+mise run build-llvm-format
+mise run configure-dprint-plugin
+mise run test
 ```
 
 `fetch-llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies the
@@ -27,10 +28,10 @@ patch reproducibility from a clean extract:
 
 ```sh
 rm -rf third_party/llvm-project-22.1.7.src
-pixi run fetch-llvm
+mise run fetch-llvm
 ```
 
-`pixi run test` builds `build/plugin.wasm`, verifies the
+`mise run test` builds `build/plugin.wasm`, verifies the
 module has zero imports, exercises the plugin ABI from Node, and runs the dprint
 CLI:
 
@@ -53,7 +54,7 @@ int main() { return 1; }
 - `src/wasm_runtime_core.cpp` — mem*, freestanding libc, and C++ runtime shims
 - `tests/` — ABI and dprint CLI integration tests
 - `schema.json` — permissive dprint config schema for the clang-format option map
-- `scripts/link_libformat_wasm.sh` — links the plugin against a minimal LibFormat
+- `CMakeLists.txt` — builds and links the plugin against a minimal LibFormat
   archive set (10 LLVM/clang static libraries, two passes)
 - `scripts/configure_llvm_wasm.sh` — cross-build LLVM/Clang for
   `wasm32-unknown-unknown`
@@ -63,8 +64,7 @@ int main() { return 1; }
 
 ## Release status
 
-The release-readiness checklist in `docs/release-plan.md` is complete. CI is
-deferred; use the reproduce/test commands above as the release gate.
+CI is deferred; use the reproduce/test commands above as the release gate.
 
 Known release semantics:
 

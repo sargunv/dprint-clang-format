@@ -24,7 +24,7 @@ fi
 
 if [[ ! -f "$source_root/llvm/CMakeLists.txt" ]]; then
   echo "LLVM source not found at $source_root" >&2
-  echo "run: pixi run fetch-llvm" >&2
+  echo "run: mise run fetch-llvm" >&2
   exit 1
 fi
 
