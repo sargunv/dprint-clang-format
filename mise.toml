@@ -3,6 +3,14 @@ experimental = true
 pin = true
 install_before = "3d"
 lockfile = true
+lockfile_platforms = [
+  "linux-x64",
+  "linux-x64-musl",
+  "linux-arm64",
+  "linux-arm64-musl",
+  "macos-arm64",
+  "windows-x64",
+]
 
 [tools]
 "aqua:apple/pkl" = "0.31.1"
@@ -13,7 +21,7 @@ lockfile = true
 "aqua:ninja-build/ninja" = "1.13.2"
 "aqua:pnpm/pnpm" = "11.7.0"
 "aqua:sharkdp/hyperfine" = "1.20.0"
-"conda:clang-format" = "22.1.8"
+"conda:clang-format" = "22.1.7"
 "core:node" = "24.17.0"
 "core:python" = "3.13"
 "github:prefix-dev/pixi" = "0.70.2"
