@@ -15,7 +15,7 @@ format_file_with_clang_format() {
   local style="$1"
   local source_path="$2"
 
-  pixi run clang-format --style="$style" "$source_path"
+  clang-format --style="$style" "$source_path"
 }
 
 write_config() {

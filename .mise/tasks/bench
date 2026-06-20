@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+#MISE description="Benchmark stdin formatting across LLVM source files."
+#MISE depends=["build"]
+
+set -euo pipefail
+
+llvm_src="third_party/llvm-project-22.1.7.src"
+plugin_path="$PWD/build/plugin.wasm"
+clang_format_path="$(mise which clang-format)"
+dprint_path="$(mise which dprint)"
+
+file_limit="${BENCH_FILE_LIMIT:-}"
+warmup="${BENCH_WARMUP:-0}"
+runs="${BENCH_RUNS:-1}"
+
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+file_list="$tmp_dir/files.txt"
+config_path="$tmp_dir/dprint.json"
+
+find "$llvm_src" -type f \
+  \( \
+    -name '*.c' -o \
+    -name '*.cc' -o \
+    -name '*.cpp' -o \
+    -name '*.cxx' -o \
+    -name '*.h' -o \
+    -name '*.hh' -o \
+    -name '*.hpp' -o \
+    -name '*.hxx' -o \
+    -name '*.m' -o \
+    -name '*.mm' \
+  \) \
+  | sort > "$file_list"
+
+if [[ -n "$file_limit" ]]; then
+  limited_file_list="$tmp_dir/files.limited.txt"
+  head -n "$file_limit" "$file_list" > "$limited_file_list"
+  file_list="$limited_file_list"
+fi
+
+file_count="$(wc -l < "$file_list" | tr -d ' ')"
+
+cat > "$config_path" <<JSON
+{
+  "plugins": ["$plugin_path"],
+  "clangFormat": {
+    "BasedOnStyle": "LLVM"
+  }
+}
+JSON
+
+export DPRINT_BENCH_FILE_LIST="$file_list"
+export DPRINT_BENCH_CONFIG="$config_path"
+export DPRINT_BENCH_CLANG_FORMAT="$clang_format_path"
+export DPRINT_BENCH_DPRINT="$dprint_path"
+
+native_command='while IFS= read -r file; do "$DPRINT_BENCH_CLANG_FORMAT" --style="{BasedOnStyle: LLVM}" --assume-filename "$file" < "$file" > /dev/null; done < "$DPRINT_BENCH_FILE_LIST"'
+dprint_command='while IFS= read -r file; do "$DPRINT_BENCH_DPRINT" fmt --stdin "$file" --config "$DPRINT_BENCH_CONFIG" --config-discovery=false < "$file" > /dev/null; done < "$DPRINT_BENCH_FILE_LIST"'
+
+echo "Benchmarking stdin formatting over $file_count LLVM/Clang source files."
+echo "Set BENCH_FILE_LIMIT, BENCH_RUNS, or BENCH_WARMUP to adjust runtime."
+
+hyperfine \
+  --warmup "$warmup" \
+  --runs "$runs" \
+  --command-name "native clang-format" "$native_command" \
+  --command-name "dprint wasm plugin" "$dprint_command"

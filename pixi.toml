@@ -9,5 +9,3 @@ clangxx = ">=22.1.7,<23"
 lld = ">=22.1.7,<23"
 # Wasm inspection tools used by integration tests.
 wabt = ">=1.0.37,<2"
-# Native clang-format oracle for dprint plugin integration tests.
-clang-format = ">=22.1.7,<23"
