@@ -9,7 +9,7 @@ llvm_build="${LLVM_WASM_BUILD:-build/llvm-wasm}"
 libcxx_include="${LIBCXX_INCLUDE:-$llvm_src/libcxx/include}"
 entry_source="${BUILD_ENTRY_SOURCE:-src/dprint_plugin.cpp}"
 entry_object="${BUILD_ENTRY_OBJECT:-build/dprint_plugin.o}"
-output_wasm="${BUILD_OUTPUT_WASM:-build/dprint-clang-format-plugin.wasm}"
+output_wasm="${BUILD_OUTPUT_WASM:-build/plugin.wasm}"
 exports="${BUILD_EXPORTS:-dprint_plugin_version_4 get_shared_bytes_ptr clear_shared_bytes get_plugin_info get_license_text register_config release_config get_config_diagnostics get_resolved_config get_config_file_matching set_file_path set_override_config format format_range get_formatted_text get_error_text check_config_updates}"
 
 if [[ ! -f "$llvm_build/lib/libclangFormat.a" ]]; then
@@ -50,6 +50,7 @@ common_flags=(
 )
 
 clang++ "${common_flags[@]}" -c "$entry_source" -o "$entry_object"
+clang "${common_flags[@]}" -std=c17 -c src/wasm_allocator.c -o build/wasm_allocator.o
 clang++ "${common_flags[@]}" -c src/wasm_runtime_core.cpp -o build/wasm_runtime_core.o
 
 libcxx_objects=(
@@ -118,6 +119,7 @@ clang++ \
   -Wl,--export-memory \
   -Wl,--gc-sections \
   "$entry_object" \
+  build/wasm_allocator.o \
   build/wasm_runtime_core.o \
   "${libcxx_objects[@]}" \
   "${link_libs[@]}" \

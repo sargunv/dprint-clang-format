@@ -2,8 +2,7 @@
 
 This repository has proven the hard part: a dprint schema v4 Wasm plugin can link
 Clang LibFormat, run without Wasm imports, and format stdin through the dprint
-CLI. The remaining work is mostly turning the spike into a maintainable release
-artifact.
+CLI. The completed work turned the spike into a maintainable release artifact.
 
 The first public release should be framed as experimental, but it should not ship
 with prototype metadata, an unbounded bump allocator, or unclear configuration
@@ -30,13 +29,13 @@ For `plugins.dprint.dev`, the GitHub release convention is:
 
 ## 1. Remove prototype artifacts
 
-Delete tracked artifacts that only documented the spike:
+Deleted tracked artifacts that only documented the spike:
 
 - `reports/dprint-plugin-imports.md`
 - `scripts/report_wasm_imports.sh`, unless folded into a test or release check
 - any unused probe/audit scripts if they are added later
 
-Keep scripts that are part of the reproducible build path:
+Kept scripts that are part of the reproducible build path:
 
 - `scripts/fetch_llvm.sh`
 - `scripts/apply_llvm_patches.sh`
@@ -45,8 +44,7 @@ Keep scripts that are part of the reproducible build path:
 - `scripts/smoke_dprint_plugin.sh`, renamed or replaced by tests
 - `scripts/check_tools.sh`, if still useful for debugging local setup
 
-After cleanup, the README should stop describing the repo as a spike and should
-document the supported release path:
+After cleanup, the README describes the supported release path:
 
 ```sh
 pixi run fetch-llvm
@@ -58,18 +56,16 @@ pixi run test
 
 ## 2. Replace the allocator
 
-Current state: `src/wasm_runtime_core.cpp` uses a bump allocator, ignores
-`free`, has an unsafe `realloc` copy size, and has no heap bound check. That is
-acceptable for proving the link, but it is the highest-risk launch blocker for a
-long-lived dprint process.
+The original `src/wasm_runtime_core.cpp` bump allocator was replaced with a
+vendored dlmalloc integration in `src/wasm_allocator.c`.
 
-Recommended path:
+Completed path:
 
-1. Integrate an existing allocator with a C-compatible
+1. Integrated an existing allocator with a C-compatible
    `malloc`/`calloc`/`realloc`/`free` surface first. Do not implement allocator
    internals ourselves.
-2. Keep the plugin zero-import and freestanding.
-3. Add an allocator stress integration test that formats repeatedly in one Wasm
+2. Kept the plugin zero-import and freestanding.
+3. Added an allocator stress integration test that formats repeatedly in one Wasm
    instance.
 
 Allocator candidates:
@@ -134,10 +130,9 @@ The existing smoke script can be split into:
 
 ## 4. Fill out metadata
 
-Current `get_plugin_info()` is hand-written JSON with placeholder values and no
-`updateUrl`.
+`get_plugin_info()` now returns release metadata including `updateUrl`.
 
-Release metadata should look like:
+Release metadata shape:
 
 ```json
 {
@@ -145,22 +140,20 @@ Release metadata should look like:
   "version": "0.1.0",
   "configKey": "clangFormat",
   "fileExtensions": ["c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "m", "mm"],
-  "helpUrl": "https://github.com/<user>/dprint-plugin-clang-format",
-  "configSchemaUrl": "https://plugins.dprint.dev/<user>/dprint-plugin-clang-format/0.1.0/schema.json",
-  "updateUrl": "https://plugins.dprint.dev/<user>/dprint-plugin-clang-format/latest.json"
+  "helpUrl": "https://github.com/sargunv/dprint-clang-format",
+  "configSchemaUrl": "https://plugins.dprint.dev/sargunv/dprint-clang-format/0.1.0/schema.json",
+  "updateUrl": "https://plugins.dprint.dev/sargunv/dprint-clang-format/latest.json"
 }
 ```
 
-Also replace `get_license_text()` with the real license text. The simplest path
-is to add a `LICENSE` file and either embed it at compile time or keep the string
-in one generated header.
+`get_license_text()` returns the real MIT license text from this release.
 
 ## 5. Support configuration properly
 
-Current state accepts flat PascalCase clang-format keys and rejects nested JSON
-objects. That blocks common clang-format settings such as `IncludeCategories`.
+The plugin accepts a JSON representation of clang-format YAML, including nested
+arrays and objects.
 
-Recommended config model:
+Config model:
 
 - Use `clangFormat` as the dprint config key.
 - Accept a JSON representation of clang-format YAML using clang-format option
@@ -169,8 +162,9 @@ Recommended config model:
   - scalars as JSON scalars
   - YAML sequences as JSON arrays
   - YAML mappings as JSON objects
-- Convert JSON to YAML text with a structured emitter, then pass it to
-  `clang::format::parseConfiguration`.
+- Serialize JSON as structured style text, then pass it to
+  `clang::format::parseConfiguration`. clang-format accepts this JSON/YAML
+  representation.
 - Keep `style` as a legacy alias for `BasedOnStyle` for now, but document it.
 - Map dprint globals only when the equivalent clang-format option is absent.
 
@@ -199,8 +193,8 @@ Important semantic decisions:
 - `get_resolved_config()` should return the normalized JSON config the plugin is
   actually using, not an internal-only partial object.
 
-Add `schema.json` once the config shape is settled. It can be permissive at
-first because clang-format has many versioned options.
+`schema.json` is intentionally permissive because clang-format has many
+versioned options; clang-format remains the authoritative option validator.
 
 ## 6. `check_config_updates`
 
@@ -273,9 +267,9 @@ pixi run test
 
 Before uploading:
 
-- `wasm-validate build/dprint-clang-format-plugin.wasm` passes.
+- `wasm-validate build/plugin.wasm` passes.
 - import count is zero.
-- `dprint fmt --stdin cpp --plugins build/dprint-clang-format-plugin.wasm`
+- `dprint fmt --stdin cpp --plugins build/plugin.wasm`
   passes.
 - `plugin.wasm` and optional `schema.json` are attached to the GitHub release.
 - README install instructions use the final `plugins.dprint.dev` URL shape.
@@ -296,13 +290,13 @@ CI can come later as a release hardening step.
 
 ## Release checklist
 
-- [ ] Remove prototype reports and unused scripts.
-- [ ] Replace bump allocator with a real allocator.
-- [ ] Add integration tests.
-- [ ] Fill out plugin metadata and license text.
-- [ ] Add `updateUrl`.
-- [ ] Implement full JSON-to-clang-format config conversion.
-- [ ] Reject or document filesystem-dependent clang-format behavior.
-- [ ] Keep `check_config_updates` as empty-ok with a test.
-- [ ] Add optional `schema.json`.
-- [ ] Update README from spike docs to install/release docs.
+- [x] Remove prototype reports and unused scripts.
+- [x] Replace bump allocator with a real allocator.
+- [x] Add integration tests.
+- [x] Fill out plugin metadata and license text.
+- [x] Add `updateUrl`.
+- [x] Implement full JSON-to-clang-format config conversion.
+- [x] Reject or document filesystem-dependent clang-format behavior.
+- [x] Keep `check_config_updates` as empty-ok with a test.
+- [x] Add optional `schema.json`.
+- [x] Update README from spike docs to install/release docs.

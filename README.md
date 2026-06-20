@@ -1,4 +1,4 @@
-# dprint clang-format Wasm spike
+# dprint clang-format Wasm plugin
 
 This repository builds a sandboxed dprint Wasm plugin that formats C/C++-style
 source with LLVM/Clang LibFormat. The plugin is a dprint Wasm plugin, not a
@@ -6,8 +6,9 @@ process plugin, and it does not shell out to `clang-format`.
 
 ## Goal
 
-Keep the repo small and maintainable: one Wasm plugin artifact, a minimal LibFormat
-link closure, LLVM patches for freestanding wasm, and a single smoke test.
+Keep the repo small and maintainable: one Wasm plugin artifact, a minimal
+LibFormat link closure, LLVM patches for freestanding wasm, and focused
+integration tests for the plugin behavior this repo owns.
 
 ## Reproduce
 
@@ -17,7 +18,7 @@ mise run pixi-install
 pixi run fetch-llvm
 pixi run configure-llvm-wasm
 pixi run ninja -C build/llvm-wasm clangFormat
-pixi run smoke-dprint-plugin
+pixi run test
 ```
 
 `fetch-llvm` downloads pinned LLVM 22.1.7 into `third_party/` and applies the
@@ -29,14 +30,14 @@ rm -rf third_party/llvm-project-22.1.7.src
 pixi run fetch-llvm
 ```
 
-`smoke-dprint-plugin` builds `build/dprint-clang-format-plugin.wasm`, writes a
-short import summary to `reports/dprint-plugin-imports.md`, exercises the plugin
-ABI from Node, and runs the dprint CLI:
+`pixi run test` builds `build/plugin.wasm`, verifies the
+module has zero imports, exercises the plugin ABI from Node, and runs the dprint
+CLI:
 
 ```sh
 printf 'int main(){return 1;}\n' |
   dprint fmt --stdin cpp --config-discovery=false \
-    --plugins build/dprint-clang-format-plugin.wasm
+    --plugins build/plugin.wasm
 ```
 
 Expected formatted output:
@@ -48,7 +49,10 @@ int main() { return 1; }
 ## Layout
 
 - `src/dprint_plugin.cpp` — dprint schema v4 exports and LibFormat wrapper
-- `src/wasm_runtime_core.cpp` — freestanding allocator, mem*, and C++ runtime shims
+- `src/wasm_allocator.c` — vendored dlmalloc integration for fixed-memory Wasm
+- `src/wasm_runtime_core.cpp` — mem*, freestanding libc, and C++ runtime shims
+- `tests/` — ABI and dprint CLI integration tests
+- `schema.json` — permissive dprint config schema for the clang-format option map
 - `scripts/link_libformat_wasm.sh` — links the plugin against a minimal LibFormat
   archive set (10 LLVM/clang static libraries, two passes)
 - `scripts/configure_llvm_wasm.sh` — cross-build LLVM/Clang for
@@ -57,18 +61,19 @@ int main() { return 1; }
   signal/process/env trims)
 - `support/wasm-sysroot/` and `support/libcxx-wasm/` — freestanding headers
 
-## Gaps and future polish
+## Release status
 
-Spike ABI is complete (`smoke-dprint-plugin` passes); production polish is not.
+The release-readiness checklist in `docs/release-plan.md` is complete. CI is
+deferred; use the reproduce/test commands above as the release gate.
 
-- [ ] **CI** — no automated fetch/build/smoke pipeline yet
-- [ ] **Plugin metadata** — placeholder name, empty `helpUrl` / `configSchemaUrl`, POC license text
-- [ ] **Config depth** — nested clang-format options (e.g. `IncludeCategories`, object arrays) are rejected; only flat PascalCase keys plus dprint globals
-- [ ] **Style discovery** — reject or document unsupported `BasedOnStyle: file` / parent-config inheritance paths
-- [ ] **`check_config_updates`** — always returns empty ok; no file-watch integration
-- [ ] **Tests** — smoke covers full-file format only; no `format_range`, ObjC, invalid-range, or config-diagnostic cases
-- [ ] **Wasm size / link audit** — optional import/symbol reports beyond the smoke import summary
-- [ ] **Sysroot trim** — freestanding headers could be narrowed further if build stays stable
+Known release semantics:
+
+- `.clang-format` filesystem discovery is not supported in the sandboxed plugin.
+  `BasedOnStyle: file` and `InheritParentConfig` are reported as config
+  diagnostics.
+- `check_config_updates` returns an empty ok response because there are no config
+  migrations yet.
+- Wasm size/link reports and further sysroot trimming are optional future polish.
 
 ## Plugin surface
 
@@ -92,4 +97,6 @@ The plugin does not discover `.clang-format` files from the filesystem.
 ## Notes
 
 - Final wasm has zero imports (no WASI, Emscripten, or host syscalls).
+- Allocation uses a vendored dlmalloc copy from wasi-libc with mmap/morecore
+  disabled, initialized from the module's fixed Wasm heap.
 - LLVM source lives in gitignored `third_party/`; patches live in this repo.

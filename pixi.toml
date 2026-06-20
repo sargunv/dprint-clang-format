@@ -1,7 +1,7 @@
 [workspace]
-name = "dprint-clang-format-wasm-spike"
+name = "dprint-plugin-clang-format"
 version = "0.1.0"
-description = "Spike for validating a sandboxed dprint clang-format WebAssembly plugin."
+description = "Sandboxed dprint WebAssembly plugin for clang-format via LLVM/Clang LibFormat."
 authors = ["Sargun V <sargunv@users.noreply.github.com>"]
 channels = ["conda-forge"]
 platforms = ["osx-arm64"]
@@ -21,4 +21,5 @@ check-tools = "scripts/check_tools.sh"
 fetch-llvm = "scripts/fetch_llvm.sh"
 configure-llvm-wasm = "scripts/configure_llvm_wasm.sh"
 build-dprint-plugin = "scripts/link_libformat_wasm.sh"
-smoke-dprint-plugin = "scripts/smoke_dprint_plugin.sh"
+test = "scripts/test_plugin.sh"
+smoke-dprint-plugin = "scripts/test_plugin.sh"

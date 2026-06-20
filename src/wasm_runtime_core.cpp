@@ -9,9 +9,6 @@
 
 extern "C" {
 
-extern unsigned char __heap_base;
-
-static uintptr_t heap_cursor = 0;
 int errno = 0;
 FILE* stdin = nullptr;
 FILE* stdout = nullptr;
@@ -141,25 +138,6 @@ char* strerror(int) {
   return const_cast<char*>("unsupported");
 }
 
-void* malloc(size_t size) {
-  if (heap_cursor == 0) {
-    heap_cursor = reinterpret_cast<uintptr_t>(&__heap_base);
-  }
-  size = (size + 7u) & ~static_cast<size_t>(7u);
-  void* ptr = reinterpret_cast<void*>(heap_cursor);
-  heap_cursor += size;
-  return ptr;
-}
-
-void* calloc(size_t count, size_t size) {
-  size_t total = count * size;
-  void* ptr = malloc(total);
-  if (ptr != nullptr) {
-    memset(ptr, 0, total);
-  }
-  return ptr;
-}
-
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*)) {}
 
 char* getenv(const char*) {
@@ -169,16 +147,6 @@ char* getenv(const char*) {
 char* realpath(const char*, char*) {
   errno = ENOENT;
   return nullptr;
-}
-
-void free(void*) {}
-
-void* realloc(void* ptr, size_t size) {
-  void* next = malloc(size);
-  if (ptr != nullptr && next != nullptr) {
-    memcpy(next, ptr, size);
-  }
-  return next;
 }
 
 char* strdup(const char* str) {

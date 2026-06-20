@@ -18,6 +18,39 @@ struct ConfigDiagnostic {
   std::string message;
 };
 
+constexpr const char* plugin_name = "dprint-plugin-clang-format";
+constexpr const char* plugin_version = "0.1.0";
+constexpr const char* plugin_help_url = "https://github.com/sargunv/dprint-clang-format";
+constexpr const char* plugin_config_schema_url =
+    "https://plugins.dprint.dev/sargunv/dprint-clang-format/0.1.0/schema.json";
+constexpr const char* plugin_update_url =
+    "https://plugins.dprint.dev/sargunv/dprint-clang-format/latest.json";
+constexpr const char* plugin_file_extensions_json =
+    "[\"c\",\"cc\",\"cpp\",\"cxx\",\"h\",\"hh\",\"hpp\",\"hxx\",\"m\",\"mm\"]";
+
+constexpr const char* license_text =
+    "MIT License\n"
+    "\n"
+    "Copyright (c) 2026 Sargun V\n"
+    "\n"
+    "Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+    "of this software and associated documentation files (the \"Software\"), to deal\n"
+    "in the Software without restriction, including without limitation the rights\n"
+    "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+    "copies of the Software, and to permit persons to whom the Software is\n"
+    "furnished to do so, subject to the following conditions:\n"
+    "\n"
+    "The above copyright notice and this permission notice shall be included in all\n"
+    "copies or substantial portions of the Software.\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
+    "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+    "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+    "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
+    "SOFTWARE.\n";
+
 struct RegisteredConfig {
   uint32_t id = 0;
   llvm::json::Object plugin;
@@ -177,7 +210,7 @@ void merge_global_options(const llvm::json::Object& global, llvm::json::Object& 
                           std::vector<ConfigDiagnostic>& diagnostics) {
   auto take_number = [&](llvm::StringRef global_key, llvm::StringRef clang_key) {
     auto it = global.find(global_key);
-    if (it == global.end() || it->second.getAsNull()) {
+    if (it == global.end() || it->second.getAsNull() || options.find(clang_key) != options.end()) {
       return;
     }
     double number = 0;
@@ -191,7 +224,8 @@ void merge_global_options(const llvm::json::Object& global, llvm::json::Object& 
   take_number("lineWidth", "ColumnLimit");
   take_number("indentWidth", "IndentWidth");
 
-  if (auto it = global.find("useTabs"); it != global.end() && !it->second.getAsNull()) {
+  if (auto it = global.find("useTabs");
+      it != global.end() && !it->second.getAsNull() && options.find("UseTab") == options.end()) {
     bool use_tabs = false;
     if (!parse_bool_value(it->second, use_tabs)) {
       diagnostics.push_back({"useTabs", "Expected a boolean"});
@@ -205,16 +239,29 @@ void merge_global_options(const llvm::json::Object& global, llvm::json::Object& 
 
 void merge_object_options(const llvm::json::Object& source, llvm::json::Object& options,
                           std::vector<ConfigDiagnostic>& diagnostics) {
+  (void)diagnostics;
   for (const auto& entry : source) {
     if (entry.first == "style") {
       options["BasedOnStyle"] = entry.second;
       continue;
     }
-    if (entry.second.getAsObject()) {
-      diagnostics.push_back({entry.first.str(), "Nested objects are not supported in plugin config"});
-      continue;
-    }
     options[entry.first] = entry.second;
+  }
+}
+
+void reject_filesystem_dependent_style(const llvm::json::Object& options,
+                                       std::vector<ConfigDiagnostic>& diagnostics) {
+  auto it = options.find("BasedOnStyle");
+  if (it == options.end()) {
+    return;
+  }
+  auto value = it->second.getAsString();
+  if (!value) {
+    return;
+  }
+  if (value->equals_insensitive("file") || value->equals_insensitive("InheritParentConfig")) {
+    diagnostics.push_back(
+        {"BasedOnStyle", "Filesystem-dependent clang-format style discovery is not supported"});
   }
 }
 
@@ -231,12 +278,14 @@ ResolveResult resolve_format_style(const llvm::json::Object& plugin, const llvm:
   result.style = clang::format::getLLVMStyle(clang::format::FormatStyle::LK_Cpp);
 
   llvm::json::Object options;
-  merge_global_options(global, options, result.diagnostics);
   merge_object_options(plugin, options, result.diagnostics);
 
   if (override_options != nullptr) {
     merge_object_options(*override_options, options, result.diagnostics);
   }
+
+  merge_global_options(global, options, result.diagnostics);
+  reject_filesystem_dependent_style(options, result.diagnostics);
 
   result.resolved = options;
 
@@ -424,17 +473,15 @@ uint8_t* clear_shared_bytes(uint32_t size) {
 }
 
 uint32_t get_plugin_info() {
-  return set_shared_string(
-      "{\"name\":\"dprint-plugin-clang-format-poc\","
-      "\"version\":\"0.1.0\","
-      "\"configKey\":\"clangFormat\","
-      "\"fileExtensions\":[\"c\",\"cc\",\"cpp\",\"cxx\",\"h\",\"hh\",\"hpp\",\"hxx\",\"m\",\"mm\"],"
-      "\"helpUrl\":\"\","
-      "\"configSchemaUrl\":\"\"}");
+  return set_shared_string(std::string("{\"name\":\"") + plugin_name + "\",\"version\":\"" +
+                           plugin_version + "\",\"configKey\":\"clangFormat\",\"fileExtensions\":" +
+                           plugin_file_extensions_json + ",\"helpUrl\":\"" + plugin_help_url +
+                           "\",\"configSchemaUrl\":\"" + plugin_config_schema_url +
+                           "\",\"updateUrl\":\"" + plugin_update_url + "\"}");
 }
 
 uint32_t get_license_text() {
-  return set_shared_string("Proof-of-concept clang-format plugin using LLVM/Clang LibFormat.");
+  return set_shared_string(license_text);
 }
 
 void register_config(uint32_t config_id) {
@@ -480,9 +527,8 @@ uint32_t get_resolved_config(uint32_t config_id) {
 }
 
 uint32_t get_config_file_matching(uint32_t) {
-  return set_shared_string(
-      "{\"fileExtensions\":[\"c\",\"cc\",\"cpp\",\"cxx\",\"h\",\"hh\",\"hpp\",\"hxx\",\"m\",\"mm\"],"
-      "\"fileNames\":[]}");
+  return set_shared_string(std::string("{\"fileExtensions\":") + plugin_file_extensions_json +
+                           ",\"fileNames\":[]}");
 }
 
 void set_file_path() {
