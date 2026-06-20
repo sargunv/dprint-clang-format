@@ -55,9 +55,15 @@ not set explicitly:
 
 `clangFormat` wins over the global option when both are present.
 
+## Limitations
+
 Filesystem-dependent style discovery is unsupported in the Wasm sandbox, so
 `BasedOnStyle: "file"` and `BasedOnStyle: "InheritParentConfig"` are rejected.
 Put the style in dprint config instead of relying on `.clang-format` discovery.
+
+Files whose nested `#if`/`#ifdef`/`#elif` branches produce more than 16 branch
+combinations may format differently from native clang-format in inactive or
+platform-specific branches.
 
 ## How it works
 
