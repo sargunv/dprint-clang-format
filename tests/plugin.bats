@@ -1,3 +1,7 @@
+setup_file() {
+  bats_require_minimum_version 1.5.0
+}
+
 setup() {
   repo_root="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   cd "$repo_root"
@@ -42,10 +46,16 @@ assert_matches_clang_format() {
   local config_path="$BATS_TEST_TMPDIR/dprint.json"
   write_config "$config_path" "$config_body"
 
-  run format_file_with_dprint "$config_path" "$source_path"
+  run --separate-stderr format_file_with_dprint "$config_path" "$source_path"
 
+  if [ "$status" -ne 0 ]; then
+    printf "%s\n" "$stderr"
+  fi
   [ "$status" -eq 0 ]
   actual="$output"
+  if [ "$actual" != "$expected" ]; then
+    diff -u <(printf "%s" "$expected") <(printf "%s" "$actual")
+  fi
   [ "$actual" = "$expected" ]
 }
 
