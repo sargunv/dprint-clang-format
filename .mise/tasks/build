@@ -3,5 +3,5 @@
 #MISE depends=["configure"]
 set -euo pipefail
 
-pixi run ninja -C build/llvm-wasm clangFormat
+pixi run cmake --build build/llvm-wasm --target clangFormat
 pixi run cmake --build build/plugin --target plugin

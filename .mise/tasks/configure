@@ -19,7 +19,7 @@ if [[ ! -f "$native_tool_dir/llvm-tblgen" && -f "$repo_root/build/llvm-wasm/NATI
 fi
 if [[ ! -f "$native_tool_dir/llvm-tblgen" ]]; then
   echo "native tablegen tools not found at $native_tool_dir" >&2
-  echo "build host tools first: pixi run ninja -C build/llvm-wasm clang-tblgen llvm-tblgen" >&2
+  echo "build host tools first: pixi run cmake --build build/llvm-wasm --target clang-tblgen llvm-tblgen" >&2
   exit 1
 fi
 
