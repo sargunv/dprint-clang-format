@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://plugins.dprint.dev/sargunv/dprint-clang-format/0.1.0/schema.json",
   "title": "dprint clang-format plugin configuration",
   "type": "object",
   "additionalProperties": false,

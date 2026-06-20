@@ -11,6 +11,21 @@ set(LLVM_NATIVE_BUILD "${PROJECT_BINARY_DIR}/llvm-native" CACHE PATH
 set(LLVM_WASM_BUILD "${PROJECT_BINARY_DIR}/llvm-wasm" CACHE PATH
     "LLVM wasm build directory")
 set(PLUGIN_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/build" CACHE PATH "Plugin output directory")
+set(DPRINT_PLUGIN_VERSION "" CACHE STRING
+    "Plugin version. Defaults to the release tag in GitHub Actions, or 0.0.0 locally.")
+set(DPRINT_PLUGIN_SCHEMA_BASE_URL "https://plugins.dprint.dev/sargunv/dprint-clang-format"
+    CACHE STRING "Base URL for published plugin schemas")
+
+if(DPRINT_PLUGIN_VERSION STREQUAL "")
+  if(DEFINED ENV{GITHUB_REF_NAME} AND "$ENV{GITHUB_REF_NAME}" MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    set(DPRINT_PLUGIN_VERSION "$ENV{GITHUB_REF_NAME}" CACHE STRING
+        "Plugin version. Defaults to the release tag in GitHub Actions, or 0.0.0 locally." FORCE)
+  else()
+    set(DPRINT_PLUGIN_VERSION "0.0.0" CACHE STRING
+        "Plugin version. Defaults to the release tag in GitHub Actions, or 0.0.0 locally." FORCE)
+  endif()
+endif()
+message(STATUS "dprint plugin version: ${DPRINT_PLUGIN_VERSION}")
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -92,6 +107,8 @@ set_target_properties(plugin PROPERTIES
 
 target_compile_definitions(plugin PRIVATE
   CLANG_BUILD_STATIC=1
+  DPRINT_PLUGIN_SCHEMA_BASE_URL="${DPRINT_PLUGIN_SCHEMA_BASE_URL}"
+  DPRINT_PLUGIN_VERSION="${DPRINT_PLUGIN_VERSION}"
   _FILE_OFFSET_BITS=64
   _LARGEFILE_SOURCE
   __STDC_CONSTANT_MACROS

@@ -20,7 +20,7 @@ jobs:
       - name: Validate release tag
         run: |
           if [[ ! "$GITHUB_REF_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release tags must use bare semver like 0.1.0." >&2
+            echo "Release tags must use bare semver like 0.0.0." >&2
             exit 1
           fi
 

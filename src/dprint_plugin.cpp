@@ -13,6 +13,14 @@
 #include <string_view>
 #include <vector>
 
+#ifndef DPRINT_PLUGIN_SCHEMA_BASE_URL
+#error "DPRINT_PLUGIN_SCHEMA_BASE_URL must be defined by the build system"
+#endif
+
+#ifndef DPRINT_PLUGIN_VERSION
+#error "DPRINT_PLUGIN_VERSION must be defined by the build system"
+#endif
+
 namespace {
 
 struct ConfigDiagnostic {
@@ -21,10 +29,8 @@ struct ConfigDiagnostic {
 };
 
 constexpr const char* plugin_name = "dprint-plugin-clang-format";
-constexpr const char* plugin_version = "0.1.0";
+constexpr const char* plugin_version = DPRINT_PLUGIN_VERSION;
 constexpr const char* plugin_help_url = "https://github.com/sargunv/dprint-clang-format";
-constexpr const char* plugin_config_schema_url =
-    "https://plugins.dprint.dev/sargunv/dprint-clang-format/0.1.0/schema.json";
 constexpr const char* plugin_update_url =
     "https://plugins.dprint.dev/sargunv/dprint-clang-format/latest.json";
 constexpr const char* plugin_file_extensions_json =
@@ -163,6 +169,10 @@ std::string object_to_json(const llvm::json::Object& object) {
   stream << llvm::json::Value(std::move(copy));
   stream.flush();
   return out;
+}
+
+std::string plugin_config_schema_url() {
+  return std::string(DPRINT_PLUGIN_SCHEMA_BASE_URL) + "/" + plugin_version + "/schema.json";
 }
 
 std::string options_to_config_text(const llvm::json::Object& options,
@@ -487,7 +497,7 @@ uint32_t get_plugin_info() {
   return set_shared_string(std::string("{\"name\":\"") + plugin_name + "\",\"version\":\"" +
                            plugin_version + "\",\"configKey\":\"clangFormat\",\"fileExtensions\":" +
                            plugin_file_extensions_json + ",\"helpUrl\":\"" + plugin_help_url +
-                           "\",\"configSchemaUrl\":\"" + plugin_config_schema_url +
+                           "\",\"configSchemaUrl\":\"" + plugin_config_schema_url() +
                            "\",\"updateUrl\":\"" + plugin_update_url + "\"}");
 }
 
