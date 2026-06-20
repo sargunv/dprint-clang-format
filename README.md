@@ -52,7 +52,7 @@ int main() { return 1; }
 - `src/dprint_plugin.cpp` — dprint schema v4 exports and LibFormat wrapper
 - `src/wasm_allocator.c` — vendored dlmalloc integration for fixed-memory Wasm
 - `src/wasm_runtime_core.cpp` — mem*, freestanding libc, and C++ runtime shims
-- `tests/` — ABI and dprint CLI integration tests
+- `tests/` — Bats integration tests and the plugin ABI harness
 - `schema.json` — permissive dprint config schema for the clang-format option
   map
 - `CMakeLists.txt` — builds and links the plugin against a minimal LibFormat

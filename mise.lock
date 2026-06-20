@@ -64,6 +64,29 @@ url = "https://github.com/apple/pkl/releases/download/0.31.1/pkl-macos-amd64"
 checksum = "sha256:a8834481667325b44c539dbb758d7365a16389070f343c04b639bbe525ede013"
 url = "https://github.com/apple/pkl/releases/download/0.31.1/pkl-windows-amd64.exe"
 
+[[tools."aqua:bats-core/bats-core"]]
+version = "1.13.0"
+backend = "aqua:bats-core/bats-core"
+
+[tools."aqua:bats-core/bats-core"."platforms.linux-arm64"]
+url = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.13.0.tar.gz"
+
+[tools."aqua:bats-core/bats-core"."platforms.linux-arm64-musl"]
+url = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.13.0.tar.gz"
+
+[tools."aqua:bats-core/bats-core"."platforms.linux-x64"]
+url = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.13.0.tar.gz"
+
+[tools."aqua:bats-core/bats-core"."platforms.linux-x64-musl"]
+url = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.13.0.tar.gz"
+
+[tools."aqua:bats-core/bats-core"."platforms.macos-arm64"]
+checksum = "blake3:d34af9fd0f9101d5309b2de31f3d1699e56a574d7d4b5e6380580a9e758a9744"
+url = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.13.0.tar.gz"
+
+[tools."aqua:bats-core/bats-core"."platforms.macos-x64"]
+url = "https://github.com/bats-core/bats-core/archive/refs/tags/v1.13.0.tar.gz"
+
 [[tools."aqua:dprint/dprint"]]
 version = "0.54.0"
 backend = "aqua:dprint/dprint"

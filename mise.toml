@@ -6,6 +6,7 @@ lockfile = true
 
 [tools]
 "aqua:apple/pkl" = "0.31.1"
+"aqua:bats-core/bats-core" = "1.13.0"
 "aqua:dprint/dprint" = "0.54.0"
 "aqua:jdx/hk" = "1.48.0"
 "aqua:Kitware/CMake" = "4.3.3"
@@ -36,6 +37,11 @@ run = "pixi run cmake --build build/plugin --target plugin"
 [tasks.configure]
 description = "Configure the dprint plugin build."
 run = "pixi run cmake --fresh -S . -B build/plugin -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/wasm32-unknown-unknown-toolchain.cmake"
+
+[tasks.test]
+description = "Test the built dprint plugin."
+depends = ["build"]
+run = "bats tests"
 
 [hooks]
 postinstall = ["hk install --mise"]
