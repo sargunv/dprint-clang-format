@@ -8,13 +8,8 @@ C/C++/Obj-C source with dprint.
 
 Add the latest plugin release to your `dprint.json`:
 
-```jsonc
-{
-  "$schema": "https://dprint.dev/schemas/v0.json",
-  "plugins": [
-    "https://plugins.dprint.dev/sargunv/dprint-clang-format/latest.json"
-  ]
-}
+```sh
+dprint add sargunv/dprint-clang-format
 ```
 
 Then run dprint normally:
@@ -23,11 +18,8 @@ Then run dprint normally:
 dprint fmt
 ```
 
-The plugin formats files with these extensions:
-
-```text
-c cc cpp cxx h hh hpp hxx m mm
-```
+The plugin formats files with these extensions: `.c`, `.cc`, `.cpp`, `.cxx`,
+`.h`, `.hh`, `.hpp`, `.hxx`, `.m`, `.mm`.
 
 ## Configure
 
