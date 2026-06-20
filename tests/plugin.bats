@@ -8,7 +8,7 @@ format_file_with_dprint() {
   local config_path="$1"
   local source_path="$2"
 
-  dprint fmt --stdin cpp --config "$config_path" --config-discovery=false < "$source_path"
+  dprint fmt --stdin "$source_path" --config "$config_path" --config-discovery=false < "$source_path"
 }
 
 format_file_with_clang_format() {
@@ -41,9 +41,9 @@ JSON
   source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp"
   config_path="$BATS_TEST_TMPDIR/dprint.json"
   write_config "$config_path" '
-  "clangFormat": { "BasedOnStyle": "LLVM", "SortIncludes": "Never" }'
+  "clangFormat": { "BasedOnStyle": "LLVM" }'
 
-  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM, SortIncludes: Never}' "$source_path")"
+  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM}' "$source_path")"
   run format_file_with_dprint "$config_path" "$source_path"
 
   [ "$status" -eq 0 ]
@@ -54,11 +54,11 @@ JSON
   source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/alg.sorting/assert.sort.invalid_comparator/assert.sort.invalid_comparator.pass.cpp"
   config_path="$BATS_TEST_TMPDIR/dprint.json"
   write_config "$config_path" '
-  "clangFormat": { "BasedOnStyle": "Microsoft", "SortIncludes": "Never" },
+  "clangFormat": { "BasedOnStyle": "Microsoft" },
   "lineWidth": 120,
   "indentWidth": 4'
 
-  expected="$(format_file_with_clang_format '{BasedOnStyle: Microsoft, SortIncludes: Never, ColumnLimit: 120, IndentWidth: 4}' "$source_path")"
+  expected="$(format_file_with_clang_format '{BasedOnStyle: Microsoft, ColumnLimit: 120, IndentWidth: 4}' "$source_path")"
   run format_file_with_dprint "$config_path" "$source_path"
 
   [ "$status" -eq 0 ]
@@ -99,7 +99,6 @@ JSON
   write_config "$config_path" '
   "clangFormat": {
     "BasedOnStyle": "LLVM",
-    "SortIncludes": "Never",
     "SpaceBeforeParens": "Custom",
     "SpaceBeforeParensOptions": {
       "AfterControlStatements": false,
@@ -108,7 +107,7 @@ JSON
     }
   }'
 
-  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM, SortIncludes: Never, SpaceBeforeParens: Custom, SpaceBeforeParensOptions: {AfterControlStatements: false, AfterFunctionDeclarationName: true, AfterFunctionDefinitionName: true}}' "$source_path")"
+  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM, SpaceBeforeParens: Custom, SpaceBeforeParensOptions: {AfterControlStatements: false, AfterFunctionDeclarationName: true, AfterFunctionDefinitionName: true}}' "$source_path")"
   run format_file_with_dprint "$config_path" "$source_path"
 
   [ "$status" -eq 0 ]

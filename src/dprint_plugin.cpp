@@ -440,9 +440,22 @@ uint32_t format_inner(uint32_t config_id, uint32_t range_start, uint32_t range_e
   clang::format::FormatStyle style = style_for_format(*entry, input);
   override_config_json().clear();
 
-  auto replacements = clang::format::reformat(
-      style, input, {clang::tooling::Range(range_start, range_end - range_start)},
-      file_path().empty() ? llvm::StringRef("<stdin>") : llvm::StringRef(file_path()));
+  llvm::StringRef format_file_name =
+      file_path().empty() ? llvm::StringRef("<stdin>") : llvm::StringRef(file_path());
+  std::vector<clang::tooling::Range> ranges = {
+      clang::tooling::Range(range_start, range_end - range_start)};
+
+  auto replacements = clang::format::sortIncludes(style, input, ranges, format_file_name);
+  auto changed_input = clang::tooling::applyAllReplacements(input, replacements);
+  if (!changed_input) {
+    error_text() = "clang-format failed to apply replacements";
+    return 2;
+  }
+
+  ranges = clang::tooling::calculateRangesAfterReplacements(replacements, ranges);
+  auto format_replacements = clang::format::reformat(style, *changed_input, ranges, format_file_name);
+  replacements = replacements.merge(format_replacements);
+
   auto result = clang::tooling::applyAllReplacements(input, replacements);
   if (!result) {
     error_text() = "clang-format failed to apply replacements";
