@@ -3,6 +3,11 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
 
 [dependencies]
+# C/C++ compiler used by CMake for the freestanding Wasm build.
 clangxx = ">=22.1.7,<23"
+# Linker used by clang for wasm32-unknown-unknown.
 lld = ">=22.1.7,<23"
+# Wasm inspection tools used by integration tests.
 wabt = ">=1.0.37,<2"
+# Native clang-format oracle for dprint plugin integration tests.
+clang-format = ">=22.1.7,<23"

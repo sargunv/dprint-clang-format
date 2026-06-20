@@ -4,12 +4,18 @@ setup() {
   plugin_path="$repo_root/build/plugin.wasm"
 }
 
-format_stdin() {
-  local source_text="$1"
-  shift
+format_file_with_dprint() {
+  local config_path="$1"
+  local source_path="$2"
 
-  printf '%s\n' "$source_text" |
-    dprint fmt --stdin cpp --config-discovery=false "$@"
+  dprint fmt --stdin cpp --config "$config_path" --config-discovery=false < "$source_path"
+}
+
+format_file_with_clang_format() {
+  local style="$1"
+  local source_path="$2"
+
+  pixi run clang-format --style="$style" "$source_path"
 }
 
 write_config() {
@@ -31,24 +37,32 @@ JSON
   [[ "$output" != *"Import["* ]]
 }
 
-@test "dprint CLI formats stdin with default config" {
-  run format_stdin "int main(){return 1;}" --plugins "$plugin_path"
-
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"int main() { return 1; }"* ]]
-}
-
-@test "dprint CLI applies clangFormat config" {
+@test "dprint CLI matches clang-format on real C++ source with LLVM style" {
+  source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp"
   config_path="$BATS_TEST_TMPDIR/dprint.json"
   write_config "$config_path" '
-  "clangFormat": { "BasedOnStyle": "Microsoft" },
+  "clangFormat": { "BasedOnStyle": "LLVM", "SortIncludes": "Never" }'
+
+  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM, SortIncludes: Never}' "$source_path")"
+  run format_file_with_dprint "$config_path" "$source_path"
+
+  [ "$status" -eq 0 ]
+  [ "$output" = "$expected" ]
+}
+
+@test "dprint CLI matches clang-format on real C++ source with Microsoft style" {
+  source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/alg.sorting/assert.sort.invalid_comparator/assert.sort.invalid_comparator.pass.cpp"
+  config_path="$BATS_TEST_TMPDIR/dprint.json"
+  write_config "$config_path" '
+  "clangFormat": { "BasedOnStyle": "Microsoft", "SortIncludes": "Never" },
   "lineWidth": 120,
   "indentWidth": 4'
 
-  run format_stdin "void f(){if(true){return;}}" --config "$config_path"
+  expected="$(format_file_with_clang_format '{BasedOnStyle: Microsoft, SortIncludes: Never, ColumnLimit: 120, IndentWidth: 4}' "$source_path")"
+  run format_file_with_dprint "$config_path" "$source_path"
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *$'void f()\n{\n    if (true)'* ]]
+  [ "$output" = "$expected" ]
 }
 
 @test "dprint CLI resolves global options into clangFormat config" {
@@ -80,10 +94,12 @@ JSON
 }
 
 @test "dprint CLI accepts nested clangFormat config" {
+  source_path="third_party/llvm-project-22.1.7.src/libcxx/test/libcxx/algorithms/debug_less.pass.cpp"
   config_path="$BATS_TEST_TMPDIR/dprint.json"
   write_config "$config_path" '
   "clangFormat": {
     "BasedOnStyle": "LLVM",
+    "SortIncludes": "Never",
     "SpaceBeforeParens": "Custom",
     "SpaceBeforeParensOptions": {
       "AfterControlStatements": false,
@@ -92,11 +108,11 @@ JSON
     }
   }'
 
-  run format_stdin "void f(){if(true){return;}}" --config "$config_path"
+  expected="$(format_file_with_clang_format '{BasedOnStyle: LLVM, SortIncludes: Never, SpaceBeforeParens: Custom, SpaceBeforeParensOptions: {AfterControlStatements: false, AfterFunctionDeclarationName: true, AfterFunctionDefinitionName: true}}' "$source_path")"
+  run format_file_with_dprint "$config_path" "$source_path"
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"void f ()"* ]]
-  [[ "$output" == *"if(true)"* ]]
+  [ "$output" = "$expected" ]
 }
 
 @test "dprint CLI rejects unsupported clangFormat options" {
